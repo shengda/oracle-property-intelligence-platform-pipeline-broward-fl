@@ -10,6 +10,7 @@ const GROUPS: Record<string, string> = {
   contractor_bbb: "Contractor / BBB links",
   occupancy_owner: "Occupancy & owner location",
   pii: "PII",
+  identity: "Published identity",
   index: "Index & search",
 };
 
@@ -41,7 +42,7 @@ export function Quality() {
             ? data.qa_cid
               ? `qa.json CID ${data.qa_cid}`
               : ""
-            : "Unpublished run: qa.json gets its CID when the run is published (M3)."}
+            : "Unpublished run: qa.json gets its CID when the run is published."}
         </p>
       </Section>
       {groups.map((g) => (

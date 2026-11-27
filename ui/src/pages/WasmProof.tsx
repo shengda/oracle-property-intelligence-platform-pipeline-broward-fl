@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ErrorBox, Section, Table } from "../components/ui.tsx";
 import { api, qs, useApi } from "../lib/api.ts";
+import { GATEWAYS } from "../lib/format.ts";
 
 const FTL = { lat: 26.14123, lon: -80.14673 };
 
@@ -18,7 +19,15 @@ function proofSql(url: string, lat: number, lon: number, miles: number, minAge: 
 
 export function WasmProof() {
   const health = useApi<any>("/api/health");
+  const manifest = useApi<any>("/api/manifest/current");
   const [url, setUrl] = useState(`${window.location.origin}/files/query/v_property.parquet`);
+  // A published run reads the Parquet by CID from a public gateway (CORS + range reads verified).
+  const publishedCid: string | null =
+    manifest.data?.published &&
+    manifest.data.files?.find((f: any) => f.name === "query/v_property.parquet")?.cid;
+  useEffect(() => {
+    if (publishedCid) setUrl(`${GATEWAYS[0]}/ipfs/${publishedCid}`);
+  }, [publishedCid]);
   const [state, setState] = useState<any>(null);
   const [error, setError] = useState<Error | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,8 +99,15 @@ export function WasmProof() {
         </p>
         {health.data && !health.data.published && (
           <p className="note">
-            Unpublished run: the Parquet comes from this server's <code>/files/</code>. After publish (M3) the
-            same query runs against <code>https://ipfs.io/ipfs/&lt;cid&gt;</code>.
+            Unpublished run: the Parquet comes from this server's <code>/files/</code>. Once the run is
+            published the page reads it by CID from a public gateway instead.
+          </p>
+        )}
+        {publishedCid && (
+          <p className="note" data-testid="wasm-published-source">
+            Published run: the browser reads <code>query/v_property.parquet</code> by its CID{" "}
+            <code>{publishedCid}</code> from {new URL(GATEWAYS[0]).host} (range requests, no server in
+            between).
           </p>
         )}
         <div className="inline">

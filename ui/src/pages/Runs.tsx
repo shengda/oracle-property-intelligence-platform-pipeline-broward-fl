@@ -25,7 +25,7 @@ export function Runs() {
                 ],
                 ["Mode", r.mode],
                 ["As of", r.as_of],
-                ["Manifest CID", r.manifest_cid ?? "— (published in M3)"],
+                ["Manifest CID", r.manifest_cid ?? "— (not published yet)"],
                 [
                   "Elephant CLI",
                   r.elephant_cli
@@ -79,6 +79,65 @@ export function Runs() {
               </p>
             )}
           </Section>
+          {runs.data.history?.length > 0 && (
+            <Section title="Run history (published runs, newest first)">
+              <Table
+                testId="run-history"
+                rows={runs.data.history}
+                cols={[
+                  ["Run", (h: any) => <strong>{h.run_id}</strong>],
+                  ["Mode", (h: any) => `${h.mode}${h.simulated ? " (simulated)" : ""}`],
+                  ["As of", (h: any) => h.as_of],
+                  ["Manifest", (h: any) => <code title={h.manifest_cid}>{shortCid(h.manifest_cid)}</code>],
+                  [
+                    "Previous",
+                    (h: any) =>
+                      h.previous_manifest_cid ? (
+                        <code title={h.previous_manifest_cid}>{shortCid(h.previous_manifest_cid)}</code>
+                      ) : (
+                        "—"
+                      ),
+                  ],
+                  [
+                    "Group roots",
+                    (h: any) =>
+                      h.groups.map((g: any) => (
+                        <div key={g.key} className="small">
+                          {g.key}: <code title={g.archive_root}>{shortCid(g.archive_root)}</code> /{" "}
+                          <code title={g.tables_root}>{shortCid(g.tables_root)}</code>
+                        </div>
+                      )),
+                  ],
+                  [
+                    "Deltas",
+                    (h: any) =>
+                      Object.entries(h.deltas_by_group ?? {})
+                        .map(([g, x]: any) => `${g}: +${n(x.added)} / ~${n(x.changed)} / −${n(x.removed)}`)
+                        .join("; "),
+                  ],
+                  [
+                    "QA",
+                    (h: any) => (
+                      <Badge status={h.qa.status}>{h.qa.status + (h.qa.overridden ? " (forced)" : "")}</Badge>
+                    ),
+                  ],
+                  [
+                    "Verified",
+                    (h: any) => (
+                      <Badge status={h.verification.ok ? "pass" : "fail"}>
+                        {h.verification.ok ? "both gateways" : "failed"}
+                      </Badge>
+                    ),
+                  ],
+                ]}
+              />
+              {runs.data.history_cid && (
+                <p className="muted small">
+                  Run history file: <code>{runs.data.history_cid}</code>
+                </p>
+              )}
+            </Section>
+          )}
           <Section title="Lexicon tables in this run">
             <Table
               rows={r.groups.flatMap((g: any) =>

@@ -195,23 +195,18 @@ const PERMIT_SUMMARY_COLS = `d.permit_key, d.permit_number, d.permit_type, d.des
   d.completion_date_resolved as completion_date, d.open_days, d.contractor_name, d.contractor_license,
   d.parcel_match_method, d.source_url`;
 
-/** Lexicon classes with one or more rows per property in the county group (detail page entity list). */
-const COUNTY_ENTITY_CLASSES = [
-  "property",
-  "parcel",
-  "address",
-  "geometry",
-  "structure",
-  "tax",
-  "sales_history",
-  "company",
-];
+/**
+ * Entity list of the property detail page: the property CID itself, then the entities of the
+ * published `property_improvement` group attached to it (each with the source request that
+ * produced it). County-group entities are not listed: this run's county archive is local only.
+ */
+const PI_ENTITY_CLASSES = ["parcel", "address", "property_improvement"];
 
 export async function getProperty(db: SnapshotDb, parcelId: string): Promise<PropertyDetail | null> {
   const id = parcelId.trim().toUpperCase();
   const p = await db.one(`select ${PROPERTY_COLS} from v_property p where p.parcel_identifier = ?`, [id]);
   if (!p) return null;
-  const pcid = (p as any).property_cid as string;
+  const pcid = (p as any).property_cid as string | null;
   const [owner, signals, structure, sales, tax, permits, entities] = await Promise.all([
     db.one(
       `select owner_type, owner_name, owner_location_class, owner_mail_state, owner_mail_zip5, occupancy_class, occupancy_basis
@@ -222,34 +217,33 @@ export async function getProperty(db: SnapshotDb, parcelId: string): Promise<Pro
       `select roof_age_basis, roof_age_confidence, roof_age_permit_key, roof_age_policy from sp_property_signals where parcel_identifier = ?`,
       [id],
     ),
-    db.one<any>(
-      `select * exclude (source_http_request, data_group_cid, request_identifier) from lx_county_structure where property_cid = ?`,
-      [pcid],
+    db.one<any>(`select * exclude (parcel_identifier) from qd_structure where parcel_identifier = ?`, [id]),
+    db.all<any>(
+      `select date, price, sale_type from qd_sales where parcel_identifier = ? order by date desc nulls last`,
+      [id],
     ),
     db.all<any>(
-      `select ownership_transfer_date as date, try_cast(purchase_price_amount as DOUBLE) as price, sale_type, cid
-       from lx_county_sales_history where property_cid = ? order by ownership_transfer_date desc nulls last`,
-      [pcid],
-    ),
-    db.all<any>(
-      `select try_cast(tax_year as INTEGER) tax_year, try_cast(property_market_value_amount as DOUBLE) market_value,
-         try_cast(property_assessed_value_amount as DOUBLE) assessed_value, try_cast(property_taxable_value_amount as DOUBLE) taxable_value,
-         try_cast(property_land_amount as DOUBLE) land_value, try_cast(property_building_amount as DOUBLE) building_value, cid
-       from lx_county_tax where property_cid = ? order by tax_year desc`,
-      [pcid],
+      `select tax_year, market_value, assessed_value, taxable_value, land_value, building_value
+       from qd_tax where parcel_identifier = ? order by tax_year desc`,
+      [id],
     ),
     db.all<PermitSummary>(
       `select ${PERMIT_SUMMARY_COLS} from sp_permit_details d where d.parcel_identifier = ?
        order by coalesce(d.issue_date, d.application_date) desc nulls last, d.permit_key`,
       [id],
     ),
-    db.all<{ class: string; cid: string; source_url: string | null }>(
-      COUNTY_ENTITY_CLASSES.map(
-        (c) =>
-          `select '${c}' as class, cid, ${sourceUrlSql()} as source_url from lx_county_${c} where property_cid = $1`,
-      ).join(" union all ") + " order by class, cid",
-      [pcid],
-    ),
+    pcid
+      ? db.all<{ class: string; cid: string; source_url: string | null }>(
+          [
+            `select 'property' as class, $1 as cid, cast(null as VARCHAR) as source_url`,
+            ...PI_ENTITY_CLASSES.map(
+              (c) =>
+                `select '${c}', cid, ${sourceUrlSql()} from lx_property_improvement_${c} where property_cid = $1`,
+            ),
+          ].join(" union all ") + " order by 1, 2",
+          [pcid],
+        )
+      : Promise.resolve([]),
   ]);
   const structureClean = structure
     ? Object.fromEntries(Object.entries(structure).filter(([k, v]) => v != null && k !== "property_cid"))
@@ -354,7 +348,7 @@ export async function getBusiness(db: SnapshotDb, id: string): Promise<BusinessD
   }
   const rows = await db.all(
     `select ${PROPERTY_COLS}, cast(null as DOUBLE) as distance_miles from v_property p
-     where p.property_cid in (select property_cid from lx_county_company where name = ?)
+     where p.parcel_identifier in (select parcel_identifier from qd_company where name = ?)
      order by p.parcel_identifier limit 500`,
     [b.name],
   );

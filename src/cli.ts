@@ -20,13 +20,6 @@ program
   .description("Broward County, FL property-intelligence pipeline (Elephant Lexicon + DuckDB + IPFS)")
   .showHelpAfterError();
 
-const later = (cmd: string, milestone: string) => () => {
-  console.error(
-    `oracle ${cmd}: not available yet — implemented in milestone ${milestone} (see docs/2026-11-25-oracle-broward-pipeline-plan.md).`,
-  );
-  process.exit(2);
-};
-
 const list = (v: string, prev: string[] = []) => [
   ...prev,
   ...v
@@ -134,7 +127,7 @@ program
 
 program
   .command("run")
-  .description("ingest → build → index (M1/M2); without --no-publish continues to publish → verify (M3)")
+  .description("ingest → build → index; without --no-publish continues to publish → verify → run history")
   .addOption(new Option("--mode <mode>", "run mode").choices(["full", "incremental"]).default("full"))
   .option("--no-publish", "stop after index (local, unpublished run)")
   .option("--skip-ingest", "reuse the current work store")
@@ -142,7 +135,6 @@ program
   .option("--accela-max-requests <n>", "cap for the bounded Fort Lauderdale contractor lookup", "4000")
   .option("--no-vectors", "skip the vector index")
   .action(async (o) => {
-    if (o.publish) later("run (publish)", "M3")();
     const t0 = Date.now();
     if (!o.skipIngest) {
       await ingest({
@@ -153,6 +145,17 @@ program
     const s = await build({ mode: o.mode });
     const r = await indexRun({ runId: s.run_id, vectors: o.vectors });
     console.log(`\n${formatQa(r.qa)}`);
+    if (o.publish) {
+      loadDotEnv();
+      const { publishCommand, formatVerification } = await import("./publish/commands.ts");
+      const p = await publishCommand({ runId: s.run_id });
+      console.log(`\n${formatVerification(p.verification)}`);
+      console.log(
+        `\nrun ${s.run_id} published in ${Math.round((Date.now() - t0) / 1000)} s\n  manifest     ${p.record.manifest_cid}\n  run history  ${p.record.history_cid}`,
+      );
+      if (!p.verification.ok) process.exitCode = 1;
+      return;
+    }
     console.log(
       `\nrun ${s.run_id} complete (unpublished) in ${Math.round((Date.now() - t0) / 1000)} s → ${path.relative(process.cwd(), runDir(s.run_id))}`,
     );
@@ -181,21 +184,68 @@ program
 
 program
   .command("publish")
-  .description("Publish a run to Elephant IPFS (M3)")
-  .option("--run <id>")
-  .option("--force")
-  .action(later("publish", "M3"));
+  .description(
+    "Publish a run: Lexicon groups + files on Filebase and the second provider, manifest, gateway verification, run history",
+  )
+  .option("--run <id>", "run id (default: latest)")
+  .option("--force", "publish despite failing QA checks (recorded in the manifest)")
+  .option("--resume", "reuse the manifest an interrupted publish of this run already pinned")
+  .option(
+    "--gateway <url...>",
+    "public gateways to verify on (default: ORACLE_GATEWAYS or the built-in pair)",
+  )
+  .action(async (o) => {
+    loadDotEnv();
+    const { publishCommand, formatVerification } = await import("./publish/commands.ts");
+    const runId = o.run ?? (await latestRun());
+    if (!runId) throw new Error("no built run found");
+    const r = await publishCommand({ runId, force: o.force, resume: o.resume, gateways: o.gateway });
+    console.log(`\n${formatVerification(r.verification)}`);
+    console.log(
+      `\nrun ${runId} published\n  manifest     ${r.record.manifest_cid}\n  run history  ${r.record.history_cid}`,
+    );
+    if (!r.verification.ok) process.exitCode = 1;
+  });
 program
   .command("verify")
-  .description("Verify a manifest on two public gateways (M3)")
-  .option("--manifest <cid>")
-  .action(later("verify", "M3"));
+  .description("Verify every CID of a published run on two public gateways (exit 1 on any failure)")
+  .option("--manifest <cid>", "manifest CID (fetched from the gateways and checked)")
+  .option("--run <id>", "a local published run")
+  .option("--quick", "root blocks only (seconds instead of minutes)")
+  .option("--gateway <url...>", "public gateways (default: ORACLE_GATEWAYS or the built-in pair)")
+  .action(async (o) => {
+    loadDotEnv();
+    const { verifyCommand, formatVerification } = await import("./publish/commands.ts");
+    const runId = o.manifest ? undefined : (o.run ?? (await latestRun()));
+    const r = await verifyCommand({ manifestCid: o.manifest, runId, quick: o.quick, gateways: o.gateway });
+    console.log(formatVerification(r));
+    if (!r.ok) process.exitCode = 1;
+  });
 program
   .command("sync")
-  .description("Sync a published run by manifest CID (M3)")
-  .option("--manifest <cid>")
-  .option("--rebuild")
-  .action(later("sync", "M3"));
+  .description("Download a published run by manifest CID (verified, cached by CID) and build its index")
+  .requiredOption("--manifest <cid>")
+  .option("--rebuild", "also recompute the permit views from the published Lexicon tables and compare")
+  .option("--history <cid>", "published run history listing this manifest (shown on the Runs page)")
+  .option("--no-vectors", "skip the vector index")
+  .option("--gateway <url...>", "gateways to read from (default: ORACLE_GATEWAYS or the built-in pair)")
+  .action(async (o) => {
+    loadDotEnv();
+    const { syncRun } = await import("./query/sync.ts");
+    const { gatewaysFromEnv } = await import("./publish/verify.ts");
+    const r = await syncRun({
+      manifestCid: o.manifest,
+      historyCid: o.history,
+      rebuild: o.rebuild,
+      vectors: o.vectors,
+      gateways: o.gateway ?? gatewaysFromEnv(),
+      log: console.log,
+    });
+    console.log(
+      `\nsynced run ${r.manifest.run_id} → ${path.relative(process.cwd(), r.indexPath)}\n  views ${JSON.stringify(r.views)} (equal to the manifest)`,
+    );
+    if (r.rebuild) console.log(`  rebuilt from Lexicon: ${JSON.stringify(r.rebuild)}`);
+  });
 program
   .command("mcp")
   .description(
@@ -204,8 +254,9 @@ program
   .option("--run <id>", "local run id (default: latest)")
   .option("--index <path>", "path to an index.duckdb")
   .option("--fixture [dir]", "serve the synthetic fixture (default fixtures/elephant-mini)")
-  .option("--manifest <cid>", "published run by manifest CID (M3)")
+  .option("--manifest <cid>", "published run by manifest CID (synced into cache/published/)")
   .action(async (o) => {
+    loadDotEnv();
     const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
     const { createOracleMcpServer } = await import("./mcp/server.ts");
     const db = await openIndexFrom(o);
@@ -221,7 +272,7 @@ program
   .option("--run <id>", "local run id (default: latest)")
   .option("--index <path>", "path to an index.duckdb")
   .option("--fixture [dir]", "serve the synthetic fixture (default fixtures/elephant-mini)")
-  .option("--manifest <cid>", "published run by manifest CID (M3)")
+  .option("--manifest <cid>", "published run by manifest CID (synced into cache/published/)")
   .option("--host <host>", "bind address", "127.0.0.1")
   .option("--port <n>", "port", "4317")
   .action(async (o) => {

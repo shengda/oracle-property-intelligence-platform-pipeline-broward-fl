@@ -29,7 +29,16 @@ export interface SnapshotDb {
   one<T = Record<string, unknown>>(sql: string, params?: DuckDBValue[]): Promise<T | null>;
   /** Reads a JSON file from the run's `meta/` directory, or null when absent. */
   readMeta<T = unknown>(name: string): Promise<T | null>;
+  /** Reads a JSON file relative to the run directory (e.g. `publish/manifest.json`), or null. */
+  readRunFile<T = unknown>(rel: string): Promise<T | null>;
   close(): Promise<void>;
+}
+
+async function readJsonIn(runDir: string | null, rel: string): Promise<any> {
+  if (!runDir) return null;
+  const f = path.join(runDir, rel);
+  if (!existsSync(f)) return null;
+  return JSON.parse(await readFile(f, "utf8"));
 }
 
 export async function openIndex(
@@ -71,10 +80,10 @@ export async function openIndex(
     all: (sql, params) => serial(() => db.all(sql, params)),
     one: (sql, params) => serial(() => db.one(sql, params)),
     async readMeta(name) {
-      if (!runDir) return null;
-      const f = path.join(runDir, "meta", name);
-      if (!existsSync(f)) return null;
-      return JSON.parse(await readFile(f, "utf8"));
+      return readJsonIn(runDir, path.join("meta", name));
+    },
+    async readRunFile(rel) {
+      return readJsonIn(runDir, rel);
     },
     close: () => serial(() => db.close()),
   };

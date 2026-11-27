@@ -98,7 +98,8 @@ export const OccupancyQuery = z.object({
 /** `v_property` row (roofing-views.v1). */
 export const PropertyRow = z.object({
   parcel_identifier: z.string(),
-  property_cid: z.string(),
+  /** CID of the property in the published county archive; null for a parcel that archive lacks. */
+  property_cid: z.string().nullable(),
   address: z.string().nullable(),
   city: z.string().nullable(),
   zip: z.string().nullable(),
@@ -234,7 +235,6 @@ export const SaleRow = z.object({
   date: z.string().nullable(),
   price: z.number().nullable(),
   sale_type: z.string().nullable(),
-  cid: z.string(),
 });
 
 export const TaxRow = z.object({
@@ -244,7 +244,6 @@ export const TaxRow = z.object({
   taxable_value: z.number().nullable(),
   land_value: z.number().nullable(),
   building_value: z.number().nullable(),
-  cid: z.string(),
 });
 
 export const PermitSummary = z.object({

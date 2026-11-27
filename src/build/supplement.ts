@@ -54,6 +54,17 @@ export async function writeSupplement(db: WorkDb, runDir: string): Promise<strin
     ],
     ["places", `select name, census_name, geoid, lat, lon from ref_places order by name`],
   ];
+  // The published county archive's property CIDs (oracle ingest --source atlas-county): the index
+  // hands these out as property_cid, so every CID in the Oracle resolves on IPFS.
+  const seed = await db.one<{ n: number }>(
+    "select count(*)::INTEGER n from information_schema.tables where table_name = 'ref_atlas_seed'",
+  );
+  if ((seed?.n ?? 0) > 0) {
+    out.push([
+      "atlas_seed",
+      "select parcel_id as parcel_identifier, property_cid from ref_atlas_seed order by parcel_id",
+    ]);
+  }
   const files: string[] = [];
   for (const [name, sql] of out) {
     const file = path.join(dir, `${name}.parquet`);

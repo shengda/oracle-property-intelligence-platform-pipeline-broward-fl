@@ -194,6 +194,55 @@ regardless and never bypassed.
   verification must handle this or use other independent gateways (README names these two only
   as examples).
 
+## M3 — how publishing works (implemented 2026-11-27)
+
+- **Providers.** Filebase (Kubo RPC `rpc.filebase.io`) holds the Lexicon DAGs and every file;
+  Pinata holds every file again. Pinata's free plan refuses pin-by-CID (`PAID_FEATURE_ONLY`) and
+  CAR imports (403), so its copy of each DAG is the group's `.car` file, which anyone can
+  re-import. Both providers compute the CID of every file independently (CIDv1, raw leaves,
+  256 KiB chunks); a mismatch fails the publish (tested on a 1.1 MB chunked file: identical).
+- **Tables DAG import.** `elephant-cli upload <tables dir>` (build `94db3af`, the one Atlas's gate
+  pins) sends `tables.car`, which holds only the `CountyTables` block; Filebase's `dag/import`
+  refuses it ("the CAR is missing blocks its DAG requires (12 missing)": 11 parts + the archive
+  root). Publish then writes the complete tables DAG as one CAR (that block, every archive block,
+  every part's blocks, each checked against its CID) and imports it. The manifest records which
+  path each DAG took (`groups[].uploads`).
+- **Gateways.** Verification uses `ipfs.filebase.io` and `gw.ipfs-lens.dev` (independent of both
+  providers); `ipfs.io`, `dweb.link` and `trustless-gateway.link` answered 429/52x to every request
+  on 2026-11-27. Both serve CORS and range requests, so the WASM page reads the published Parquet
+  by CID. Override with `ORACLE_GATEWAYS`. Local gateways are refused.
+- **Verification.** Files: size + SHA-256 from the manifest, byte for byte on both gateways.
+  Lexicon archive (133k blocks): public gateways cut off a full DAG export (`ipfs.filebase.io`
+  appended "CAR stream truncated" after 3,526 blocks), so the archive is checked as Atlas does: every
+  byte through its `.car` file (rooted at the archive CID, every block hashed at publish), plus a
+  spaced sample of 16 blocks from the gateway (root, shards, properties; dag-json links followed,
+  each block hashed). Tables root: its block, which must link exactly the archive root and the
+  manifest's parts (each checked byte for byte). The manifest: one raw block. Retries: timeouts and
+  5xx back off 2/4/8 s; 429 waits `Retry-After` or 15 s × attempt.
+- **Path-keyed CDN caches.** `gw.ipfs-lens.dev` sits behind Cloudflare, which caches by path: after
+  one `?format=car` or plain GET of a CID, a `?format=raw` request for it returns the cached CAR or
+  file. Block reads accept a CAR (read to the requested block) and fall back to the full byte check
+  when they get file bytes. Both answers are still checked against the CID.
+- **Run history next to a synced run.** A manifest cannot name its history (the history lists the
+  manifest's CID). `sync` takes it from the local run that published the manifest, or from
+  `--history <cid>` (it must list the manifest). `publish --resume` re-verifies an interrupted
+  publish from its pinned manifest instead of uploading again.
+- **Published identity.** The views hand out the property CIDs of the published Atlas county
+  archive (`supplement/atlas_seed.parquet`): 749,012 of 766,044 parcels; the 17,032 parcels that
+  archive lacks get `property_cid` null (contract: nullable). Entity lists show only published
+  CIDs (the property and its `property_improvement` entities); sale and tax rows no longer carry
+  CIDs of the unpublished county archive. QA check `property_cids_published`.
+- **The index is rebuilt, not downloaded.** The manifest lists the inputs (`query/v_*.parquet`,
+  `query/qd_*.parquet` county detail, `supplement/*.parquet`, the `property_improvement` Lexicon
+  parts, `meta/coverage.json`) and the view row counts; `oracle sync` rebuilds the index from them
+  and fails on any count mismatch. `--rebuild` also recomputes `v_roof_permit` and `v_contractor`
+  from the published Lexicon tables and compares them row for row. `v_property` cannot be
+  recomputed from published Lexicon data, because the run's own county archive is not published.
+- **Incremental runs reuse the county group** (hardlinked, no disk) when none of its inputs
+  (roll, DOR, Census, Sunbiz) changed since the previous run; permit refreshes do not count,
+  because the one permit-derived county field (structure roof date) is served from the run's
+  supplement (`qd_structure`, `v_property`). Otherwise the county group is rebuilt.
+
 ## Kit deviations (architecture §0.1, kept current)
 
 | Kit rule (source) | Our choice | Why |

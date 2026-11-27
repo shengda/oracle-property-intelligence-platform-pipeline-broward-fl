@@ -22,6 +22,7 @@ export const ms = (x: number | null | undefined) =>
       ? `${Math.floor(x / 60_000)} min ${Math.round((x % 60_000) / 1000)} s`
       : `${(x / 1000).toFixed(1)} s`;
 export const label = (s: string | null | undefined) => (s ? s.replace(/_/g, " ") : "—");
-export const GATEWAYS = ["https://ipfs.io", "https://dweb.link"] as const;
+/** The gateways `oracle verify` checks on (src/publish/verify.ts PUBLIC_GATEWAYS). */
+export const GATEWAYS = ["https://ipfs.filebase.io", "https://gw.ipfs-lens.dev"] as const;
 export const gatewayLinks = (cid: string) =>
   GATEWAYS.map((g) => ({ gateway: new URL(g).host, url: `${g}/ipfs/${cid}` }));

@@ -30,6 +30,18 @@ export interface ElephantCli {
     outDir: string,
     opts: { partSize: string; summaryJson?: string },
   ): Promise<ExportResult>;
+  /**
+   * `upload` a county CAR or a tables directory to a Kubo RPC (Filebase by default, which reads
+   * FILEBASE_* from the environment). It succeeds only once the gateway serves the root.
+   */
+  upload(input: string, opts: { api: string; summaryJson: string; timeoutS?: number }): Promise<UploadResult>;
+}
+
+export interface UploadResult {
+  /** Archive root (for a CAR) or tables root (for a tables directory) the node reported. */
+  root: string;
+  /** The CLI's own summary document (api, root, blocks or parts, gateway URL, timestamp). */
+  summary: Record<string, unknown>;
 }
 
 export class ElephantCliError extends Error {
@@ -127,6 +139,21 @@ export function createElephantCli(
       if (opts.summaryJson) args.push("--output-json", opts.summaryJson);
       const r = await json(args);
       return { tablesRoot: r.root, countyRoot: r.county_root, tables: r.tables, parts: Number(r.parts) };
+    },
+    async upload(input, opts) {
+      const args = ["upload", input, "--api", opts.api, "--output-json", opts.summaryJson];
+      if (opts.timeoutS) args.push("--timeout", String(opts.timeoutS));
+      const r = await json(args);
+      const root = r?.root ?? r?.tables_root ?? r?.tablesRoot;
+      if (typeof root !== "string") {
+        throw new ElephantCliError(
+          `elephant-cli upload printed no root: ${JSON.stringify(r).slice(0, 300)}`,
+          0,
+          "",
+          r,
+        );
+      }
+      return { root, summary: r };
     },
   };
 }

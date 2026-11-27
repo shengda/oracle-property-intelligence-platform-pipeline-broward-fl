@@ -2,7 +2,10 @@ import { existsSync } from "node:fs";
 import { readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import {
+  ROOFING_VIEWS,
   ROOFING_VIEWS_VERSION,
+  createCountyDetail,
+  createPropertyIds,
   createRoofingViews,
   materializeRoofingViews,
 } from "../views/roofing-views.ts";
@@ -26,6 +29,8 @@ const REQUIRED_LX: Record<string, string> = {
 
 export interface IndexBuildResult {
   path: string;
+  /** Whose property CIDs the views carry: the published Atlas county archive's, or this run's. */
+  property_identity: "atlas" | "local";
   tables: Record<string, number>;
   views: Record<string, number>;
   fts: { docs: number };
@@ -90,58 +95,95 @@ export async function buildIndex(
     }
     // Permit coverage by jurisdiction, from the run's published coverage.json.
     const coverage = JSON.parse(await readFile(path.join(src.runDir, "meta", "coverage.json"), "utf8"));
-    await db.run(`create or replace table sp_permit_coverage (jurisdiction VARCHAR, name VARCHAR, cities VARCHAR,
-      status VARCHAR, parcels INTEGER, permits INTEGER, roofing_permits INTEGER, reason VARCHAR)`);
-    await db.appendRows(
-      "sp_permit_coverage",
-      (coverage.permit_coverage ?? []).map((j: any) => ({
-        jurisdiction: j.jurisdiction,
-        name: j.name,
-        cities: (j.cities ?? []).join("|"),
-        status: j.status,
-        parcels: j.parcels,
-        permits: j.permits,
-        roofing_permits: j.roofingPermits,
-        reason: j.reason ?? null,
-      })),
-    );
-    tables.sp_permit_coverage = (coverage.permit_coverage ?? []).length;
+    tables.sp_permit_coverage = await loadPermitCoverage(db, coverage);
     log(`index: ${Object.keys(tables).length} tables loaded`);
 
+    const identity = (await tableExists(db, "sp_atlas_seed")) ? "atlas" : "local";
+    await createPropertyIds(db, { atlasSeed: identity === "atlas" });
+    await createCountyDetail(db);
     await createRoofingViews(db, { asOf: src.asOf });
     await materializeRoofingViews(db);
-    const views: Record<string, number> = {};
-    for (const v of ["v_property", "v_roof_permit", "v_contractor", "v_business", "v_owner"]) {
-      const n = await db.one<{ n: number }>(`select count(*)::INTEGER n from ${v}`);
-      views[v] = n?.n ?? 0;
-    }
-    log(`index: roofing views ${JSON.stringify(views)}`);
-
-    // Full-text index over permit descriptions, addresses and business names.
-    await db.run(`create or replace table fts_docs as
-      select 'permit:' || permit_key as doc_id, 'permit' as kind, permit_key as ref, parcel_identifier,
-        concat_ws(' ', permit_type, description, raw_status, contractor_name, permit_address) as text
-      from sp_permit_details
-      union all
-      select 'property:' || parcel_identifier, 'property', parcel_identifier, parcel_identifier, concat_ws(' ', address, city, zip)
-      from v_property
-      union all
-      select 'business:' || business_key, 'business', business_key, null, concat_ws(' ', name, role) from v_business`);
-    await db.run(`pragma create_fts_index('fts_docs', 'doc_id', 'text', overwrite = 1)`);
-    const ftsDocs = (await db.one<{ n: number }>("select count(*)::INTEGER n from fts_docs"))?.n ?? 0;
-    log(`index: full-text index over ${ftsDocs} documents`);
-
-    const vectors =
-      opts.vectors === false
-        ? { docs: 0, model: null, status: "skipped" as const, reason: "disabled (--no-vectors)" }
-        : await buildVectorIndex(db, { log, embedder: opts.embedder });
-
-    await db.run(`create or replace table index_meta as select '${ROOFING_VIEWS_VERSION}' as views_version,
-      '${src.runId}' as run_id, '${src.asOf}' as as_of, now()::VARCHAR as built_at,
-      cast(null as VARCHAR) as manifest_cid`);
-    await db.run("checkpoint");
-    return { path: outPath, tables, views, fts: { docs: ftsDocs }, vectors };
+    const rest = await finishIndex(db, {
+      runId: src.runId,
+      asOf: src.asOf,
+      identity,
+      manifestCid: null,
+      log,
+      vectors: opts.vectors,
+      embedder: opts.embedder,
+    });
+    return { path: outPath, property_identity: identity, tables, ...rest };
   } finally {
     await db.close();
   }
+}
+
+/**
+ * The part of an index every build shares, whether from a local run (`buildIndex`) or from a
+ * published manifest (`oracle sync`): view row counts, the full-text index, the vector index and
+ * `index_meta`. Expects `v_*`, `sp_permit_details` to exist.
+ */
+export async function finishIndex(
+  db: WorkDb,
+  o: {
+    runId: string;
+    asOf: string;
+    identity: "atlas" | "local";
+    manifestCid: string | null;
+    log: (m: string) => void;
+    vectors?: boolean;
+    embedder?: (texts: string[]) => Promise<number[][]>;
+  },
+): Promise<Omit<IndexBuildResult, "path" | "property_identity" | "tables">> {
+  const views: Record<string, number> = {};
+  for (const v of ROOFING_VIEWS) {
+    const n = await db.one<{ n: number }>(`select count(*)::INTEGER n from ${v}`);
+    views[v] = n?.n ?? 0;
+  }
+  o.log(`index: roofing views ${JSON.stringify(views)}`);
+
+  // Full-text index over permit descriptions, addresses and business names.
+  await db.run(`create or replace table fts_docs as
+    select 'permit:' || permit_key as doc_id, 'permit' as kind, permit_key as ref, parcel_identifier,
+      concat_ws(' ', permit_type, description, raw_status, contractor_name, permit_address) as text
+    from sp_permit_details
+    union all
+    select 'property:' || parcel_identifier, 'property', parcel_identifier, parcel_identifier, concat_ws(' ', address, city, zip)
+    from v_property
+    union all
+    select 'business:' || business_key, 'business', business_key, null, concat_ws(' ', name, role) from v_business`);
+  await db.run(`pragma create_fts_index('fts_docs', 'doc_id', 'text', overwrite = 1)`);
+  const ftsDocs = (await db.one<{ n: number }>("select count(*)::INTEGER n from fts_docs"))?.n ?? 0;
+  o.log(`index: full-text index over ${ftsDocs} documents`);
+
+  const vectors =
+    o.vectors === false
+      ? { docs: 0, model: null, status: "skipped" as const, reason: "disabled (--no-vectors)" }
+      : await buildVectorIndex(db, { log: o.log, embedder: o.embedder });
+
+  await db.run(
+    `create or replace table index_meta as select ? as views_version, ? as run_id, ? as as_of,
+      now()::VARCHAR as built_at, ?::VARCHAR as manifest_cid, ? as property_identity`,
+    [ROOFING_VIEWS_VERSION, o.runId, o.asOf, o.manifestCid, o.identity],
+  );
+  await db.run("checkpoint");
+  return { views, fts: { docs: ftsDocs }, vectors };
+}
+
+/** `sp_permit_coverage` (permit coverage by jurisdiction) from a run's `meta/coverage.json`. */
+export async function loadPermitCoverage(db: WorkDb, coverage: any): Promise<number> {
+  await db.run(`create or replace table sp_permit_coverage (jurisdiction VARCHAR, name VARCHAR, cities VARCHAR,
+    status VARCHAR, parcels INTEGER, permits INTEGER, roofing_permits INTEGER, reason VARCHAR)`);
+  const rows = (coverage?.permit_coverage ?? []).map((j: any) => ({
+    jurisdiction: j.jurisdiction,
+    name: j.name,
+    cities: (j.cities ?? []).join("|"),
+    status: j.status,
+    parcels: j.parcels,
+    permits: j.permits,
+    roofing_permits: j.roofingPermits,
+    reason: j.reason ?? null,
+  }));
+  if (rows.length) await db.appendRows("sp_permit_coverage", rows);
+  return rows.length;
 }

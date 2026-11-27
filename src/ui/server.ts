@@ -15,6 +15,9 @@ import * as C from "../contract/index.ts";
 import { REPO_ROOT } from "../config.ts";
 import { mountMcpHttp } from "../mcp/http.ts";
 import { createOracleMcpServer, currentManifest, runHistory } from "../mcp/server.ts";
+import { compareManifests, manifestRows, servedManifest, servedVerification } from "../publish/served.ts";
+import { gatewaysFromEnv, verifyManifest } from "../publish/verify.ts";
+import { fetchManifest } from "../query/sync.ts";
 import type { SnapshotDb } from "../query/db.ts";
 import { listPlaces, resolvePlace } from "../query/places.ts";
 import * as Q from "../query/queries.ts";
@@ -139,9 +142,12 @@ export async function startUiServer(
             timings_ms: g.timingsMs ?? null,
             tables: g.tables ?? {},
           })),
-          deltas: (history.runs as any[])[0]?.deltas ?? null,
+          deltas: (await db.readMeta<any>("deltas.json")) ?? null,
         },
       ],
+      // Published runs, newest first (each with its manifest CID, roots and verification).
+      history: db.published ? history.runs : [],
+      history_cid: ((await db.readRunFile<any>("publish/publish.json")) ?? {}).history_cid ?? null,
     };
   });
 
@@ -185,13 +191,33 @@ export async function startUiServer(
       return reply.code(404).send({ error: `run ${req.params.runId} is not served here` });
     const qa = await db.readMeta<any>("qa.json");
     if (!qa) return reply.code(404).send({ error: "this run has no meta/qa.json (run `oracle index`)" });
-    return { ...qa, published: db.published, qa_cid: null };
+    const m = await servedManifest(db);
+    const qaCid = m?.artifacts.find((a) => a.name === "meta/qa.json")?.cid ?? null;
+    return { ...qa, published: db.published, qa_cid: qaCid };
   });
 
   app.get<{ Params: { runId: string } }>("/api/manifest/:runId", async (req, reply) => {
     if (!sameRun(req.params.runId))
       return reply.code(404).send({ error: `run ${req.params.runId} is not served here` });
     const manifest = await currentManifest(db);
+    const published = await servedManifest(db);
+    if (published) {
+      const v = await servedVerification(db);
+      return {
+        ...manifest,
+        files: manifestRows(published, db.manifestCid),
+        last_verification: v
+          ? {
+              ok: v.ok,
+              checkedAt: v.checkedAt,
+              gateways: v.gateways,
+              quick: v.quick,
+              results: v.results.length,
+            }
+          : null,
+        verify: { available: true, reason: null },
+      };
+    }
     const files: {
       name: string;
       kind: string;
@@ -244,7 +270,7 @@ export async function startUiServer(
             size,
             sha256: sha,
             cid: null,
-            note: sha ? undefined : "large file: digest computed at publish (M3)",
+            note: sha ? undefined : "large file: digest computed at publish",
           });
         }
       }
@@ -256,7 +282,7 @@ export async function startUiServer(
         available: db.published,
         reason: db.published
           ? null
-          : "Unpublished run: gateway verification starts once the run is published (M3).",
+          : "Unpublished run: gateway verification starts once the run is published (oracle publish).",
       },
     };
   });
@@ -264,14 +290,65 @@ export async function startUiServer(
   app.get<{ Params: { runId: string } }>("/api/verify/:runId", async (req, reply) => {
     if (!sameRun(req.params.runId))
       return reply.code(404).send({ error: `run ${req.params.runId} is not served here` });
+    const report = db.published ? await servedVerification(db) : null;
     return {
       run_id: db.meta.run_id,
       published: db.published,
-      report: null,
+      report,
       reason: db.published
-        ? "No verification report stored yet."
-        : "Unpublished run: nothing is on IPFS gateways yet (M3).",
+        ? report
+          ? null
+          : "No verification report stored for this run yet (oracle verify)."
+        : "Unpublished run: nothing is on IPFS gateways yet.",
     };
+  });
+
+  // "Verify now": re-check every CID of the served manifest on the public gateways, quick mode
+  // (each root block must hash to its CID; files up to 5 MB byte for byte). Seconds, not minutes.
+  app.post<{ Params: { runId: string } }>("/api/verify/:runId", async (req, reply) => {
+    if (!sameRun(req.params.runId))
+      return reply.code(404).send({ error: `run ${req.params.runId} is not served here` });
+    const m = await servedManifest(db);
+    if (!m || !db.manifestCid) return reply.code(409).send({ error: "this run is not published" });
+    const report = await verifyManifest(m, {
+      manifestCid: db.manifestCid,
+      gateways: gatewaysFromEnv(),
+      quick: true,
+      retries: 2,
+      timeoutMs: 30_000,
+      concurrency: 8,
+    });
+    return { run_id: db.meta.run_id, published: true, report, reason: null };
+  });
+
+  // "Check previous run": fetch the previous manifest by CID from the gateways (it must hash to
+  // its CID) and list what changed. Proves an earlier run still resolves.
+  app.get("/api/manifest/previous", async (_req, reply) => {
+    const m = await servedManifest(db);
+    if (!m) return reply.code(409).send({ error: "this run is not published" });
+    if (!m.previous_manifest_cid) {
+      return { previous_manifest_cid: null, reason: "This is the first published run." };
+    }
+    const t0 = Date.now();
+    try {
+      const prev = await fetchManifest(m.previous_manifest_cid, { gateways: gatewaysFromEnv() });
+      return {
+        previous_manifest_cid: m.previous_manifest_cid,
+        resolved_in_ms: Date.now() - t0,
+        run_id: prev.run_id,
+        created_at: prev.created_at,
+        groups: prev.groups.map((g) => ({
+          group: g.key,
+          archive_root: g.archive.cid,
+          tables_root: g.tables.cid,
+        })),
+        ...compareManifests(prev, m),
+      };
+    } catch (err) {
+      return reply
+        .code(502)
+        .send({ previous_manifest_cid: m.previous_manifest_cid, error: (err as Error).message });
+    }
   });
 
   // ── queries ──────────────────────────────────────────────────────────────────────────────

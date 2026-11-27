@@ -16,6 +16,7 @@ export interface QaCheck {
     | "contractor_bbb"
     | "occupancy_owner"
     | "pii"
+    | "identity"
     | "index";
   title: string;
   value: unknown;
@@ -276,6 +277,32 @@ export async function qaReport(opts: {
         detail: atlas
           ? `${pi.without_published_seed?.parcels ?? 0} permitted parcels (${pi.without_published_seed?.permits ?? 0} permits) are not in the published county archive and are left out of the group; they stay in the query views.`
           : "Built with our own Seeds (atlas-county not ingested): the group cannot be registered next to the published county archive.",
+      });
+    }
+
+    // Every CID the Oracle hands out must resolve: property CIDs come from the published archive.
+    const ident = await db.one<{ prop_identity: string | null; total: number; with_cid: number }>(
+      `select (select any_value(property_identity) from index_meta) prop_identity, count(*)::INTEGER total,
+         count(property_cid)::INTEGER with_cid from v_property`,
+    );
+    if (ident) {
+      add({
+        id: "property_cids_published",
+        group: "identity",
+        title: "Property CIDs in the views are those of the published county archive",
+        value: {
+          property_identity: ident.prop_identity,
+          properties: ident.total,
+          with_published_cid: ident.with_cid,
+          without_cid: ident.total - ident.with_cid,
+        },
+        threshold:
+          "pass: identity atlas (CIDs of the published archive; parcels it lacks get none); warn: local identity (CIDs of this run's unpublished county archive)",
+        status: ident.prop_identity === "atlas" ? "pass" : "warn",
+        detail:
+          ident.prop_identity === "atlas"
+            ? `${ident.total - ident.with_cid} parcels of this run's roll are not in the published county archive; their property_cid is null.`
+            : "No published Seed loaded (oracle ingest --source atlas-county): property CIDs are this run's own and resolve only if its county archive is published.",
       });
     }
 

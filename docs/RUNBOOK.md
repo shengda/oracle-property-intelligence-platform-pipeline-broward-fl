@@ -1,4 +1,4 @@
-# Runbook — Broward Oracle pipeline (M1 ingest → build → index; M2 inspect: serve, MCP, agent)
+# Runbook — Broward Oracle pipeline (M1 ingest → build → index; M2 inspect: serve, MCP, agent; M3 publish → verify → sync)
 
 Everything in M1 is local and unpublished. Outputs land in gitignored folders: `cache/raw/`
 (downloads, with SHA-256 per source), `work/oracle.duckdb` (staging work store), `runs/<run_id>/`
@@ -77,14 +77,14 @@ npm run ui:build                 # once, and after UI changes (builds ui/dist)
 ./bin/oracle.mjs serve --fixture # the synthetic fixture (CRM development, tests)
 ```
 
-The site is labelled **UNPUBLISHED** until M3. Pages:
+The site is labelled **UNPUBLISHED** until the run is published. Pages:
 
 | Page | What to check |
 |---|---|
 | Runs | group roots, Lexicon table row counts, coverage, limitations, build timings |
 | Sources | every source: status, records, bytes, SHA-256, limitation; permit coverage by jurisdiction |
 | Quality | every `meta/qa.json` check with value, threshold, status; 20 spot-check parcels linked to bcpa.net |
-| Manifest | local artifacts with size + SHA-256 and group CIDs; "Verify now" is disabled until publish |
+| Manifest | every CID with size + SHA-256; once published, "Verify now" re-checks them on two gateways and "Check previous run" fetches the previous manifest by CID |
 | Explorer | radius search (city picker, address, lat/lon or map click): aged roofs + long-open roof permits |
 | Occupancy | owner & occupancy (tenant) view with owner-location filter |
 | Property / Permit / Contractor / Business | one record with its relationships, Lexicon entity CIDs and source requests |
@@ -118,9 +118,35 @@ UI development with hot reload: `./bin/oracle.mjs serve` in one terminal, `npm r
 
 Review the Quality page and the data, fix defects by re-running only the affected `--source` or
 `--group`, then `oracle index --run <id>`, and record the decision in `docs/DATA-QA.md`. Nothing is
-published (M3) before that sign-off.
+published before that sign-off.
 
-## Commands that arrive later
+## M3 — publish, verify, sync
 
-`publish`, `verify`, `sync` and `serve --manifest <cid>` arrive with M3 and exit with code 2 and a
-message until then.
+Keys in `.env` (never committed): `FILEBASE_KEY`, `FILEBASE_SECRET`, `FILEBASE_BUCKET`,
+`PINATA_JWT`, `PIN_SECOND_PROVIDER=pinata`. Gateways default to `ipfs.filebase.io` and
+`gw.ipfs-lens.dev`; override with `ORACLE_GATEWAYS=https://a,https://b`.
+
+```bash
+./bin/oracle.mjs publish --run <run_id>          # QA gate → upload → pin on both → manifest → full verify → run history
+./bin/oracle.mjs publish --run <run_id> --force  # publish despite failing QA checks (recorded in the manifest)
+./bin/oracle.mjs publish --run <run_id> --resume # after an interrupted publish: reuse the pinned manifest, re-verify, write history
+./bin/oracle.mjs verify --run <run_id>           # re-check every byte and block on both gateways
+./bin/oracle.mjs verify --manifest <cid> --quick # root blocks + files ≤ 5 MB, any published run
+./bin/oracle.mjs sync --manifest <cid> --rebuild # rebuild the index from published artifacts only
+./bin/oracle.mjs sync --manifest <cid> --history <history cid>  # also show that run history
+./bin/oracle.mjs serve --manifest <cid>          # sync, then serve the published run
+./bin/oracle.mjs run                             # ingest → build → index → publish (incremental after the first run)
+```
+
+What publish writes, under `runs/<id>/publish/`: `manifest.json` (its CID is the run's),
+`verification.json`, `run-history.json` (every published run, chained by `previous_manifest_cid`)
+and `publish.json`. Publishing again is idempotent: providers return the same CIDs.
+
+`sync` keeps a CID cache in `cache/ipfs/` and builds `cache/published/<manifest cid>/`. Every file
+is checked against the manifest's size and SHA-256 and the view row counts must match; `--rebuild`
+also recomputes the permit views from the published Lexicon tables and compares them row for row.
+
+An incremental run hardlinks the previous run's county group when none of its inputs changed (log:
+`reusing its county group`), so it needs disk only for the index (~3.3 GB) and the permit group.
+A run's local `query/index.duckdb` is regenerable (`oracle index --run <id>`, or `sync`) and is
+the first thing to delete when disk runs short.

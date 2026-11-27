@@ -21,10 +21,10 @@ test("manifest page renders gateway links built from CIDs; Verify now is disable
 }) => {
   await page.goto("/#/manifest");
   await expect(page.getByTestId("verify-now")).toBeDisabled();
-  const link = page.locator('a[href^="https://ipfs.io/ipfs/baguqeera"]').first();
+  const link = page.locator('a[href^="https://ipfs.filebase.io/ipfs/baguqeera"]').first();
   await expect(link).toBeVisible();
   const cid = (await link.getAttribute("href"))!.split("/ipfs/")[1];
-  await expect(page.locator(`a[href="https://dweb.link/ipfs/${cid}"]`).first()).toBeVisible();
+  await expect(page.locator(`a[href="https://gw.ipfs-lens.dev/ipfs/${cid}"]`).first()).toBeVisible();
 });
 
 test("explorer: city picker + 5 miles lists aged roofs and long-open permits; clicking the map moves the pin", async ({

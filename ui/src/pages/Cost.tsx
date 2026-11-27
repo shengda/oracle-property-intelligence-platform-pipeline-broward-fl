@@ -9,8 +9,8 @@ export function Cost() {
           min for a full Broward run, no cloud cost.
         </li>
         <li>
-          <strong>Published data</strong> (M3) is content-addressed on IPFS, pinned on two providers; readers
-          fetch it from public gateways. Oracle runs no paid database.
+          <strong>Published data</strong> is content-addressed on IPFS, pinned on two providers; readers fetch
+          it from public gateways. Oracle runs no paid database.
         </li>
         <li>
           <strong>Queries</strong> run in DuckDB on the consumer side: this server, the CRM, an MCP client, or

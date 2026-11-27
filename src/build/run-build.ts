@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, link, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { COUNTY, PART_SIZE, PATHS, REPO_ROOT, runDir } from "../config.ts";
 import { createElephantCli } from "../elephant/cli.ts";
@@ -33,6 +33,8 @@ export interface RunState {
     tables_dir: string;
     validate_errors: number;
     car_checks: Record<string, number>;
+    /** Set when an incremental run reused this group's outputs unchanged (hardlinked) from that run. */
+    reused_from_run?: string;
   })[];
   watermarks: Record<
     string,
@@ -103,6 +105,51 @@ export async function latestRun(exclude?: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * Sources the county group is built from (roll, DOR, Census geography, Sunbiz owners). Permit and
+ * contractor sources are not among them: the only permit-derived county field (structure roof
+ * date) is served from the run's own supplement instead (`qd_structure`, `v_property`).
+ */
+export const COUNTY_GROUP_SOURCES = [
+  "bcpa-taxroll",
+  "bcpa-taxroll-full",
+  "dor-nal-sdf",
+  "census-county-boundary",
+  "census-zcta-county",
+  "census-places",
+  "sunbiz",
+];
+
+/** County-group inputs whose watermark (SHA-256 of what was loaded) differs between two runs. */
+export function changedCountyInputs(
+  prev: RunState["watermarks"] | undefined,
+  cur: RunState["watermarks"],
+): string[] {
+  return COUNTY_GROUP_SOURCES.filter((k) => (prev?.[k]?.sha256 ?? null) !== (cur[k]?.sha256 ?? null));
+}
+
+async function linkTree(from: string, to: string): Promise<void> {
+  const st = await stat(from);
+  if (st.isDirectory()) {
+    await mkdir(to, { recursive: true });
+    for (const f of await readdir(from)) await linkTree(path.join(from, f), path.join(to, f));
+    return;
+  }
+  await mkdir(path.dirname(to), { recursive: true });
+  await rm(to, { force: true });
+  await link(from, to).catch(() => copyFile(from, to));
+}
+
+/** Hardlink one group's build outputs (CAR, hash and error CSVs, export summary, tables) into a new run. */
+export async function reuseGroupOutputs(fromRun: string, toRun: string, g: GroupKey): Promise<void> {
+  for (const f of await readdir(path.join(fromRun, "build"))) {
+    if (f === `${g}.car` || f.startsWith(`${g}-`)) {
+      await linkTree(path.join(fromRun, "build", f), path.join(toRun, "build", f));
+    }
+  }
+  await linkTree(path.join(fromRun, "tables", g), path.join(toRun, "tables", g));
+}
+
 export async function build(opts: {
   runId?: string;
   mode?: "full" | "incremental";
@@ -160,6 +207,32 @@ export async function build(opts: {
     writeFile(path.join(dir, "meta", "state.json"), `${JSON.stringify(state, null, 2)}\n`);
   await saveState();
 
+  // Incremental runs reuse the county group when none of its inputs changed since the previous
+  // run (architecture §3.4: rebuild what changed sources touch, reuse the rest). It is not
+  // published (DECISIONS.md, M3), and rebuilding it costs ~11 GB of disk and an hour.
+  let toBuild = groups;
+  let reusedCounty: { from: string; stats: unknown } | null = null;
+  if (mode === "incremental" && !prior && !opts.groups?.length && previous && groups.includes("county")) {
+    const prevDir = runDir(previous);
+    const prevState = await readRunState(prevDir);
+    const prevCounty = prevState?.groups.find((g) => g.group === "county");
+    const changed = changedCountyInputs(prevState?.watermarks, state.watermarks);
+    if (prevState && prevCounty && changed.length === 0) {
+      await reuseGroupOutputs(prevDir, dir, "county");
+      state.groups.push({ ...prevCounty, reused_from_run: prevCounty.reused_from_run ?? previous });
+      const prevCoverage = await readJson<{ groups?: Record<string, unknown> }>(
+        path.join(prevDir, "meta", "coverage.json"),
+      );
+      reusedCounty = { from: previous, stats: prevCoverage?.groups?.county ?? null };
+      toBuild = groups.filter((g) => g !== "county");
+      log(`build ${runId}: county inputs unchanged since ${previous}; reusing its county group (hardlinked)`);
+    } else if (changed.length) {
+      log(
+        `build ${runId}: county inputs changed since ${previous} (${changed.join(", ")}); rebuilding county`,
+      );
+    }
+  }
+
   const db = await openWorkDb(PATHS.workDb);
   try {
     log(`build ${runId}: deriving work tables (as of ${asOf})`);
@@ -170,7 +243,14 @@ export async function build(opts: {
       : null;
     const deltas: Record<string, Deltas> = { ...(priorDeltas?.groups ?? {}) };
     const groupStats: Record<string, unknown> = { ...(priorCoverage?.groups ?? {}) };
-    for (const g of groups) {
+    if (reusedCounty) {
+      groupStats.county = { ...(reusedCounty.stats as object), reused_from_run: reusedCounty.from };
+      deltas.county = await computeDeltas(
+        path.join(runDir(reusedCounty.from), "tables", "county"),
+        path.join(dir, "tables", "county"),
+      );
+    }
+    for (const g of toBuild) {
       const groupDir = path.join(dir, "groups", g);
       if (g === "county") {
         const ctx = await groupContext(manifest, "County");

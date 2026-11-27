@@ -1,12 +1,14 @@
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { DEFAULT_ROOF_AGE_YEARS } from "../config.ts";
-import { ROOFING_VIEWS } from "../views/roofing-views.ts";
+import { COUNTY_DETAIL_TABLES, ROOFING_VIEWS } from "../views/roofing-views.ts";
 import { openWorkDb } from "../work-db.ts";
 
 /**
- * Derived artifacts from the run's index: one Parquet per roofing view (`query/<view>.parquet`)
- * and capped sample extracts (`samples/*.csv`, ≤ 100 rows, no owner names).
+ * Derived artifacts from the run's index: one Parquet per roofing view (`query/<view>.parquet`),
+ * the compact county detail (`query/qd_*.parquet`) and capped sample extracts (`samples/*.csv`,
+ * ≤ 100 rows, no owner names). With `supplement/*.parquet` and the published Lexicon tables they
+ * are everything `oracle sync` needs to rebuild the index.
  */
 export async function writeDerived(indexPath: string, outDir: string): Promise<{ files: string[] }> {
   const queryDir = path.join(outDir, "query");
@@ -31,6 +33,13 @@ export async function writeDerived(indexPath: string, outDir: string): Promise<{
               : "parcel_identifier";
       await db.run(
         `copy (select * from ${v} order by ${order}) to '${f}' (format parquet, compression zstd, row_group_size 100000)`,
+      );
+      files.push(f);
+    }
+    for (const t of COUNTY_DETAIL_TABLES) {
+      const f = path.join(queryDir, `${t}.parquet`);
+      await db.run(
+        `copy (select * from ${t} order by all) to '${f}' (format parquet, compression zstd, row_group_size 100000)`,
       );
       files.push(f);
     }

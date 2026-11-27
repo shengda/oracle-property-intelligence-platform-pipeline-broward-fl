@@ -9,7 +9,7 @@ prompts. The same tool registry (`src/tools/registry.ts`) backs the agent chat.
 |---|---|
 | Local run, stdio | `claude mcp add oracle-broward -- ./bin/oracle.mjs mcp` (latest run; `--run <id>`, `--index <path>`, `--fixture`) |
 | Local server, HTTP | `./bin/oracle.mjs serve`, then `claude mcp add --transport http oracle-broward http://127.0.0.1:4317/mcp` |
-| Published run (M3) | `./bin/oracle.mjs mcp --manifest <cid>` |
+| Published run | `./bin/oracle.mjs mcp --manifest <cid>` |
 | Hosted (M5) | `https://<host>/mcp` |
 
 HTTP is Streamable HTTP in stateless mode: POST only, JSON responses, no session id, 120 requests per

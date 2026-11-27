@@ -1,33 +1,49 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { servedHistory, servedManifest } from "../publish/served.ts";
 import type { SnapshotDb } from "../query/db.ts";
 import { ORACLE_TOOLS } from "../tools/registry.ts";
 import { viewsGuide } from "../views/views-guide.ts";
 
 export const MCP_SERVER_NAME = "oracle-broward";
 
-/** What the manifest resource reports for a local, unpublished run (M2), or a published one (M3). */
+/** What the manifest resource reports: the published manifest's groups, or a local run's computed roots. */
 export async function currentManifest(db: SnapshotDb): Promise<Record<string, unknown>> {
   const state = await db.readMeta<any>("state.json");
+  const m = await servedManifest(db);
   return {
     published: db.published,
     manifest_cid: db.manifestCid,
+    previous_manifest_cid: m?.previous_manifest_cid ?? null,
     run_id: db.meta.run_id,
     as_of: db.meta.as_of,
     views_version: db.meta.views_version,
     note: db.published
-      ? "Published run; artifacts are addressed by CID."
+      ? "Published run; every artifact is addressed by CID and checkable by size + SHA-256."
       : "UNPUBLISHED local run: group roots below are computed locally and are not yet retrievable from IPFS gateways.",
-    groups: (state?.groups ?? []).map((g: any) => ({
-      group: g.group,
-      properties: g.properties,
-      archive_root: g.archiveRoot,
-      tables_root: g.tablesRoot,
-    })),
+    groups: m
+      ? m.groups.map((g) => ({
+          group: g.key,
+          properties: g.properties,
+          archive_root: g.archive.cid,
+          tables_root: g.tables.cid,
+          published: true,
+        }))
+      : (state?.groups ?? []).map((g: any) => ({
+          group: g.group,
+          properties: g.properties,
+          archive_root: g.archiveRoot,
+          tables_root: g.tablesRoot,
+          published: false,
+        })),
+    extends: m?.extends ?? null,
+    derived_index: m?.derived_index ?? null,
   };
 }
 
 export async function runHistory(db: SnapshotDb): Promise<Record<string, unknown>> {
+  const h = await servedHistory(db);
+  if (h) return { ...h, runs: [...h.runs].reverse() };
   const state = await db.readMeta<any>("state.json");
   const deltas = await db.readMeta<any>("deltas.json");
   return {
@@ -42,7 +58,7 @@ export async function runHistory(db: SnapshotDb): Promise<Record<string, unknown
         deltas: deltas ?? null,
       },
     ],
-    note: db.published ? undefined : "History of published runs starts in M3; this lists the local run only.",
+    note: "Unpublished local run: the run history starts with its first publish.",
   };
 }
 
