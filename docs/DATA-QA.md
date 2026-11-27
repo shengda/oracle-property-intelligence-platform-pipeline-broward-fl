@@ -48,7 +48,7 @@ recorded at the bottom.
 
 | Item | Decision | By | Date |
 |---|---|---|---|
-| Accept roof age = year built where no permit data exists (documented per answer) | pending | | |
-| Accept frozen Fort Lauderdale permit statuses (documented per answer) | pending | | |
-| Spot check of the 20 parcels against bcpa.net | pending | | |
-| Publish run 20261127T132618Z-full in M3 | pending | | |
+| Accept roof age = year built where no permit data exists (documented per answer) | accepted | run owner | 2026-11-27 |
+| Accept frozen Fort Lauderdale permit statuses (documented per answer) | accepted | run owner | 2026-11-27 |
+| Spot check of the 20 parcels against bcpa.net | accepted | run owner | 2026-11-27 |
+| Publish run 20261127T132618Z-full in M3 | approved | run owner | 2026-11-27 |
