@@ -201,3 +201,29 @@ from v_property vp
 left join sp_property_signals s on s.parcel_identifier = vp.parcel_identifier
 left join (select property_cid, any_value(name) as owner_company_name from lx_county_company group by 1) oc on oc.property_cid = vp.property_cid`);
 }
+
+/** Lookup keys indexed on each materialized view (ART indexes for point lookups). */
+const VIEW_KEYS: Record<(typeof ROOFING_VIEWS)[number], string[]> = {
+  v_property: ["parcel_identifier", "property_cid"],
+  v_roof_permit: ["permit_key", "parcel_identifier"],
+  v_contractor: ["dbpr_license_id", "company_cid"],
+  v_business: ["business_key", "company_cid"],
+  v_owner: ["parcel_identifier"],
+};
+
+/**
+ * Materialize `roofing-views.v1` inside the index: each view's rows go to `mv_<name>` (ordered by
+ * location so radius bbox prefilters prune row groups) and `v_<name>` becomes `select * from
+ * mv_<name>`. Names and columns are unchanged; queries drop from ~0.7 s to milliseconds because
+ * the joins run once, at index build, not per request. Views are materialized in dependency
+ * order (v_roof_permit and v_owner read v_property; v_business reads v_contractor).
+ */
+export async function materializeRoofingViews(db: WorkDb): Promise<void> {
+  for (const v of ROOFING_VIEWS) {
+    const mv = `m${v}`;
+    const order = ROOFING_VIEW_COLUMNS[v].includes("lat") ? "order by lat nulls last, lon" : "";
+    await db.run(`create or replace table ${mv} as select * from ${v} ${order}`);
+    await db.run(`create or replace view ${v} as select * from ${mv}`);
+    for (const k of VIEW_KEYS[v]) await db.run(`create index ${mv}_${k} on ${mv} (${k})`);
+  }
+}

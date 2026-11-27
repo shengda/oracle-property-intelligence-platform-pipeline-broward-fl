@@ -1,0 +1,265 @@
+{
+  "source": "U.S. Census Bureau 2024 Gazetteer places (FL), internal points inside the Broward County boundary (cb_2024 county)",
+  "source_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_gaz_place_12.txt",
+  "places": [
+    {
+      "name": "BOULEVARD GARDENS",
+      "census_name": "Boulevard Gardens CDP",
+      "geoid": "1207687",
+      "lat": 26.12714,
+      "lon": -80.18117
+    },
+    {
+      "name": "BROADVIEW PARK",
+      "census_name": "Broadview Park CDP",
+      "geoid": "1208650",
+      "lat": 26.09875,
+      "lon": -80.20847
+    },
+    {
+      "name": "COCONUT CREEK",
+      "census_name": "Coconut Creek city",
+      "geoid": "1213275",
+      "lat": 26.28094,
+      "lon": -80.18472
+    },
+    {
+      "name": "COOPER CITY",
+      "census_name": "Cooper City city",
+      "geoid": "1214125",
+      "lat": 26.04806,
+      "lon": -80.28496
+    },
+    {
+      "name": "CORAL SPRINGS",
+      "census_name": "Coral Springs city",
+      "geoid": "1214400",
+      "lat": 26.27072,
+      "lon": -80.2593
+    },
+    {
+      "name": "DANIA BEACH",
+      "census_name": "Dania Beach city",
+      "geoid": "1216335",
+      "lat": 26.05721,
+      "lon": -80.16459
+    },
+    {
+      "name": "DAVIE",
+      "census_name": "Davie town",
+      "geoid": "1216475",
+      "lat": 26.07917,
+      "lon": -80.28301
+    },
+    {
+      "name": "DEERFIELD BEACH",
+      "census_name": "Deerfield Beach city",
+      "geoid": "1216725",
+      "lat": 26.31172,
+      "lon": -80.12538
+    },
+    {
+      "name": "FORT LAUDERDALE",
+      "census_name": "Fort Lauderdale city",
+      "geoid": "1224000",
+      "lat": 26.14123,
+      "lon": -80.14673
+    },
+    {
+      "name": "FRANKLIN PARK",
+      "census_name": "Franklin Park CDP",
+      "geoid": "1224710",
+      "lat": 26.13265,
+      "lon": -80.17633
+    },
+    {
+      "name": "HALLANDALE BEACH",
+      "census_name": "Hallandale Beach city",
+      "geoid": "1228452",
+      "lat": 25.98396,
+      "lon": -80.14077
+    },
+    {
+      "name": "HILLSBORO BEACH",
+      "census_name": "Hillsboro Beach town",
+      "geoid": "1230850",
+      "lat": 26.27855,
+      "lon": -80.07951
+    },
+    {
+      "name": "HILLSBORO PINES",
+      "census_name": "Hillsboro Pines CDP",
+      "geoid": "1230858",
+      "lat": 26.32511,
+      "lon": -80.19214
+    },
+    {
+      "name": "HOLLYWOOD",
+      "census_name": "Hollywood city",
+      "geoid": "1232000",
+      "lat": 26.03097,
+      "lon": -80.16461
+    },
+    {
+      "name": "LAUDERDALE LAKES",
+      "census_name": "Lauderdale Lakes city",
+      "geoid": "1239525",
+      "lat": 26.16693,
+      "lon": -80.20083
+    },
+    {
+      "name": "LAUDERDALE-BY-THE-SEA",
+      "census_name": "Lauderdale-by-the-Sea town",
+      "geoid": "1239475",
+      "lat": 26.19134,
+      "lon": -80.09946
+    },
+    {
+      "name": "LAUDERHILL",
+      "census_name": "Lauderhill city",
+      "geoid": "1239550",
+      "lat": 26.16223,
+      "lon": -80.22443
+    },
+    {
+      "name": "LAZY LAKE",
+      "census_name": "Lazy Lake village",
+      "geoid": "1239750",
+      "lat": 26.15635,
+      "lon": -80.1452
+    },
+    {
+      "name": "LIGHTHOUSE POINT",
+      "census_name": "Lighthouse Point city",
+      "geoid": "1240450",
+      "lat": 26.27776,
+      "lon": -80.08862
+    },
+    {
+      "name": "MARGATE",
+      "census_name": "Margate city",
+      "geoid": "1243125",
+      "lat": 26.24804,
+      "lon": -80.21117
+    },
+    {
+      "name": "MIRAMAR",
+      "census_name": "Miramar city",
+      "geoid": "1245975",
+      "lat": 25.97253,
+      "lon": -80.33858
+    },
+    {
+      "name": "NORTH LAUDERDALE",
+      "census_name": "North Lauderdale city",
+      "geoid": "1249425",
+      "lat": 26.21245,
+      "lon": -80.22139
+    },
+    {
+      "name": "OAKLAND PARK",
+      "census_name": "Oakland Park city",
+      "geoid": "1250575",
+      "lat": 26.17905,
+      "lon": -80.15241
+    },
+    {
+      "name": "PARKLAND",
+      "census_name": "Parkland city",
+      "geoid": "1255125",
+      "lat": 26.32136,
+      "lon": -80.2543
+    },
+    {
+      "name": "PEMBROKE PARK",
+      "census_name": "Pembroke Park town",
+      "geoid": "1255750",
+      "lat": 25.98894,
+      "lon": -80.18026
+    },
+    {
+      "name": "PEMBROKE PINES",
+      "census_name": "Pembroke Pines city",
+      "geoid": "1255775",
+      "lat": 26.01472,
+      "lon": -80.34017
+    },
+    {
+      "name": "PLANTATION",
+      "census_name": "Plantation city",
+      "geoid": "1257425",
+      "lat": 26.12557,
+      "lon": -80.26182
+    },
+    {
+      "name": "POMPANO BEACH",
+      "census_name": "Pompano Beach city",
+      "geoid": "1258050",
+      "lat": 26.24162,
+      "lon": -80.13385
+    },
+    {
+      "name": "ROOSEVELT GARDENS",
+      "census_name": "Roosevelt Gardens CDP",
+      "geoid": "1261807",
+      "lat": 26.14068,
+      "lon": -80.18088
+    },
+    {
+      "name": "SEA RANCH LAKES",
+      "census_name": "Sea Ranch Lakes village",
+      "geoid": "1264725",
+      "lat": 26.19987,
+      "lon": -80.0984
+    },
+    {
+      "name": "SOUTHWEST RANCHES",
+      "census_name": "Southwest Ranches town",
+      "geoid": "1268135",
+      "lat": 26.04969,
+      "lon": -80.37383
+    },
+    {
+      "name": "SUNRISE",
+      "census_name": "Sunrise city",
+      "geoid": "1269700",
+      "lat": 26.1716,
+      "lon": -80.26163
+    },
+    {
+      "name": "TAMARAC",
+      "census_name": "Tamarac city",
+      "geoid": "1270675",
+      "lat": 26.2033,
+      "lon": -80.25603
+    },
+    {
+      "name": "WASHINGTON PARK",
+      "census_name": "Washington Park CDP",
+      "geoid": "1275225",
+      "lat": 26.13248,
+      "lon": -80.1824
+    },
+    {
+      "name": "WEST PARK",
+      "census_name": "West Park city",
+      "geoid": "1276658",
+      "lat": 25.97867,
+      "lon": -80.18101
+    },
+    {
+      "name": "WESTON",
+      "census_name": "Weston city",
+      "geoid": "1276582",
+      "lat": 26.10039,
+      "lon": -80.40206
+    },
+    {
+      "name": "WILTON MANORS",
+      "census_name": "Wilton Manors city",
+      "geoid": "1278000",
+      "lat": 26.15932,
+      "lon": -80.13935
+    }
+  ]
+}

@@ -1,9 +1,12 @@
-import type { WorkDb } from "../work-db.ts";
+/** Anything that can run a SELECT: the work store or a read-only SnapshotDb. */
+export interface Queryable {
+  all<T = Record<string, unknown>>(sql: string): Promise<T[]>;
+}
 
 const FORBIDDEN =
   /\b(COPY|ATTACH|DETACH|INSTALL|LOAD|PRAGMA|CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|REPLACE|MERGE|EXPORT|IMPORT|SET|RESET|CALL|CHECKPOINT|VACUUM|USE|BEGIN|COMMIT|ROLLBACK|GRANT)\b/i;
 const FILE_FUNCS =
-  /\b(read_csv\w*|read_json\w*|read_parquet|read_text|read_blob|parquet_scan|glob|st_read|sniff_csv|getenv)\s*\(/i;
+  /\b(read_csv\w*|read_json\w*|read_parquet|read_text|read_blob|parquet_scan|glob|st_read|sniff_csv|getenv|query|query_table|\w+_scan|\w+_attach)\s*\(/i;
 
 /** Strip string literals and comments so keyword checks do not trip on quoted text. */
 function stripLiterals(sql: string): string {
@@ -31,7 +34,7 @@ export function assertReadOnlySql(sql: string): string {
 }
 
 export async function runReadOnlySql(
-  db: WorkDb,
+  db: Queryable,
   sql: string,
   maxRows = 500,
 ): Promise<{ rows: Record<string, unknown>[]; truncated: boolean }> {

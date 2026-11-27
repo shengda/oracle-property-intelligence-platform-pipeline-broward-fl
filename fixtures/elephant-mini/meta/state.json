@@ -1,0 +1,148 @@
+{
+  "schema": "oracle.run-state.v1",
+  "run_id": "fixture",
+  "mode": "fixture",
+  "as_of": "2026-11-25",
+  "status": "indexed",
+  "synthetic": true,
+  "elephant_cli": {
+    "version": "elephant-cli 2.0.0-alpha.0",
+    "layout": "packed",
+    "part_size": "64m",
+    "build": "pinned"
+  },
+  "groups": [
+    {
+      "group": "county",
+      "archiveRoot": "baguqeeraanslh7nvjhdnd677uwiw7q4stc6p2fvesiodxuhz3prci6igmewa",
+      "tablesRoot": "baguqeeraw6uuoiyitcjwogbicvjsjnduvsqtpieb33ozx6aqtun3vjolenoa",
+      "properties": 50,
+      "tables": {
+        "properties": {
+          "rows": 50,
+          "parts": 1
+        },
+        "address_has_geometry": {
+          "rows": 50,
+          "parts": 1
+        },
+        "address": {
+          "rows": 67,
+          "parts": 1
+        },
+        "geometry": {
+          "rows": 50,
+          "parts": 1
+        },
+        "property_has_address": {
+          "rows": 50,
+          "parts": 1
+        },
+        "property": {
+          "rows": 50,
+          "parts": 1
+        },
+        "property_has_parcel": {
+          "rows": 50,
+          "parts": 1
+        },
+        "parcel": {
+          "rows": 50,
+          "parts": 1
+        },
+        "property_has_structure": {
+          "rows": 48,
+          "parts": 1
+        },
+        "structure": {
+          "rows": 48,
+          "parts": 1
+        },
+        "property_has_tax": {
+          "rows": 50,
+          "parts": 1
+        },
+        "tax": {
+          "rows": 50,
+          "parts": 1
+        },
+        "address_has_parcel": {
+          "rows": 50,
+          "parts": 1
+        },
+        "company_has_mailing_address": {
+          "rows": 17,
+          "parts": 1
+        },
+        "company": {
+          "rows": 17,
+          "parts": 1
+        },
+        "property_has_sales_history": {
+          "rows": 73,
+          "parts": 1
+        },
+        "sales_history": {
+          "rows": 73,
+          "parts": 1
+        },
+        "sales_history_has_company": {
+          "rows": 17,
+          "parts": 1
+        }
+      }
+    },
+    {
+      "group": "property_improvement",
+      "archiveRoot": "baguqeera43llsme3qklg4zlptyhlwnb3gvanikm54x5cuwo3lrrgwuo4i6ha",
+      "tablesRoot": "baguqeeraqozvcrqy6viub542zkjpdqfl3hjxpf23o56rzewr6752j5xmrcwq",
+      "properties": 14,
+      "tables": {
+        "properties": {
+          "rows": 14,
+          "parts": 1
+        },
+        "address_has_parcel": {
+          "rows": 14,
+          "parts": 1
+        },
+        "address": {
+          "rows": 14,
+          "parts": 1
+        },
+        "parcel": {
+          "rows": 14,
+          "parts": 1
+        },
+        "contractor_has_person": {
+          "rows": 2,
+          "parts": 1
+        },
+        "company": {
+          "rows": 2,
+          "parts": 1
+        },
+        "person": {
+          "rows": 2,
+          "parts": 1
+        },
+        "property_has_property_improvement": {
+          "rows": 14,
+          "parts": 1
+        },
+        "property": {
+          "rows": 14,
+          "parts": 1
+        },
+        "property_improvement": {
+          "rows": 14,
+          "parts": 1
+        },
+        "property_improvement_has_contractor": {
+          "rows": 2,
+          "parts": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { Command, Option } from "commander";
@@ -11,6 +12,7 @@ import { formatQa, indexRun } from "./query/run-index.ts";
 import { runReadOnlySql } from "./query/sql-guard.ts";
 import type { GroupKey } from "./types.ts";
 import { openWorkDb } from "./work-db.ts";
+import { loadDotEnv, openIndexFrom } from "./serve.ts";
 
 const program = new Command();
 program
@@ -196,18 +198,63 @@ program
   .action(later("sync", "M3"));
 program
   .command("mcp")
-  .description("MCP server over a run's index (M2)")
-  .option("--index <path>")
-  .option("--manifest <cid>")
-  .option("--fixture <dir>")
-  .action(later("mcp", "M2"));
+  .description(
+    "MCP server (stdio) over a run's index: --run <id> (default latest), --index <path> or --fixture [dir]",
+  )
+  .option("--run <id>", "local run id (default: latest)")
+  .option("--index <path>", "path to an index.duckdb")
+  .option("--fixture [dir]", "serve the synthetic fixture (default fixtures/elephant-mini)")
+  .option("--manifest <cid>", "published run by manifest CID (M3)")
+  .action(async (o) => {
+    const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+    const { createOracleMcpServer } = await import("./mcp/server.ts");
+    const db = await openIndexFrom(o);
+    const server = createOracleMcpServer(db);
+    await server.connect(new StdioServerTransport());
+    console.error(
+      `oracle mcp: serving run ${db.meta.run_id} (${db.published ? "published" : "UNPUBLISHED"}) on stdio`,
+    );
+  });
 program
   .command("serve")
-  .description("Explorer UI + HTTP API + /mcp (M2)")
-  .option("--index <path>")
-  .option("--manifest <cid>")
-  .option("--fixture <dir>")
-  .action(later("serve", "M2"));
+  .description("Explorer UI + HTTP API v1 + /mcp + agent over a run's index (unpublished runs are labelled)")
+  .option("--run <id>", "local run id (default: latest)")
+  .option("--index <path>", "path to an index.duckdb")
+  .option("--fixture [dir]", "serve the synthetic fixture (default fixtures/elephant-mini)")
+  .option("--manifest <cid>", "published run by manifest CID (M3)")
+  .option("--host <host>", "bind address", "127.0.0.1")
+  .option("--port <n>", "port", "4317")
+  .action(async (o) => {
+    loadDotEnv();
+    const { startUiServer, UI_DIST } = await import("./ui/server.ts");
+    const { agentFromEnv, createAgentHandler } = await import("./agent/agent.ts");
+    const { budgetFromEnv } = await import("./agent/budget.ts");
+    const db = await openIndexFrom(o);
+    const agent = await agentFromEnv(db);
+    const srv = await startUiServer({
+      db,
+      host: o.host,
+      port: Number(o.port),
+      agent: agent ? createAgentHandler(agent, budgetFromEnv()) : undefined,
+    });
+    const hasUi = existsSync(path.join(UI_DIST, "index.html"));
+    console.log(
+      `oracle serve: run ${db.meta.run_id} (${db.published ? "published" : "UNPUBLISHED"}, as of ${db.meta.as_of})`,
+    );
+    console.log(`  Explorer   ${srv.url}/${hasUi ? "" : "  (UI not built: npm run ui:build)"}`);
+    console.log(`  API v1     ${srv.url}/api/health`);
+    console.log(`  MCP        ${srv.url}/mcp  (Streamable HTTP, stateless)`);
+    console.log(
+      `  Agent      ${agent ? `on (${agent.modelId})` : "off — set ANTHROPIC_API_KEY in .env to enable"}`,
+    );
+    const stop = async () => {
+      await srv.close();
+      await db.close();
+      process.exit(0);
+    };
+    process.on("SIGINT", stop);
+    process.on("SIGTERM", stop);
+  });
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err instanceof Error ? (err.stack ?? err.message) : err);

@@ -8,3 +8,6 @@ fixtures/
 docs/
 README.md
 package-lock.json
+ui/dist/
+test-results/
+playwright-report/

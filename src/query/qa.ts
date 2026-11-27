@@ -70,7 +70,15 @@ export async function qaReport(opts: {
     // --- coverage & scale
     const props = await scalar(db, "select count(*)::INTEGER n from lx_county_property");
     const rollParcels = await scalar(work, "select count(*)::INTEGER n from stg_parcels");
-    const rollRows = await scalar(work, "select count(*)::INTEGER n from stg_bcpa_raw");
+    // The raw roll table exists for real runs; the synthetic fixture stages parcels directly.
+    const hasRaw =
+      (await scalar(
+        work,
+        "select count(*)::INTEGER n from information_schema.tables where table_name = 'stg_bcpa_raw'",
+      )) > 0;
+    const rollRows = hasRaw
+      ? await scalar(work, "select count(*)::INTEGER n from stg_bcpa_raw")
+      : rollParcels;
     const diff = rollParcels ? Math.abs(props - rollParcels) / rollParcels : 1;
     add({
       id: "property_count_vs_roll",
@@ -86,10 +94,12 @@ export async function qaReport(opts: {
       status: diff <= 0.005 ? "pass" : diff <= 0.02 ? "warn" : "fail",
       detail: `${rollRows - rollParcels} roll rows merged (polygon parts sharing one folio) or skipped (invalid id).`,
     });
-    const invalid = await scalar(
-      work,
-      "select count(*)::INTEGER n from stg_bcpa_raw where not regexp_full_match(trim(coalesce(FOLIO,'')), '[0-9A-Z]{12}')",
-    );
+    const invalid = hasRaw
+      ? await scalar(
+          work,
+          "select count(*)::INTEGER n from stg_bcpa_raw where not regexp_full_match(trim(coalesce(FOLIO,'')), '[0-9A-Z]{12}')",
+        )
+      : 0;
     add({
       id: "invalid_parcel_ids",
       group: "coverage_scale",

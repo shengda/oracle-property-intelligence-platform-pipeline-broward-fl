@@ -1,6 +1,7 @@
 import path from "node:path";
 import { PATHS } from "../config.ts";
 import type { WorkDb } from "../work-db.ts";
+import type { Queryable } from "./sql-guard.ts";
 
 export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 export const EMBEDDING_DIM = 384;
@@ -79,7 +80,7 @@ export async function buildVectorIndex(
 
 /** Cosine-nearest documents for a query text (used by searchRecords in M2 and by the QA check). */
 export async function semanticSearch(
-  db: WorkDb,
+  db: Queryable,
   query: string,
   limit = 10,
   embedder?: Embedder,

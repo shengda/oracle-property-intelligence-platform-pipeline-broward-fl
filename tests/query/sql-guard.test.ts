@@ -11,6 +11,8 @@ test.each([
   "SELECT 1; SELECT 2",
   "select * from read_csv('/etc/passwd')",
   "delete from t",
+  "select * from sqlite_scan('x.db', 't')",
+  "select * from query('drop table v_property')",
 ])("runReadOnlySql rejects %s", (sql) => {
   expect(() => assertReadOnlySql(sql)).toThrow();
 });

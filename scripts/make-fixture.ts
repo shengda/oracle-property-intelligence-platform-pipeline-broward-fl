@@ -14,6 +14,8 @@ import { writeSupplement } from "../src/build/supplement.ts";
 import { PART_SIZE, REPO_ROOT } from "../src/config.ts";
 import { createElephantCli } from "../src/elephant/cli.ts";
 import { loadLexiconManifest } from "../src/lexicon/manifest.ts";
+import { buildIndex } from "../src/query/index-build.ts";
+import { qaReport } from "../src/query/qa.ts";
 import { groupContext } from "../src/lexicon/output-writer.ts";
 import { permitCoverage } from "../src/sources/permit-coverage.ts";
 import { buildCountyGroup } from "../src/transforms/county/index.ts";
@@ -236,7 +238,10 @@ export async function makeFixture(outDir: string, opts: { log?: (m: string) => v
   const work = path.join(outDir, "..", ".fixture-work");
   await rm(work, { recursive: true, force: true });
   await mkdir(work, { recursive: true });
-  const db = await openWorkDb(":memory:");
+  // Staging lives in a file (not memory) so the QA report can read it after the build.
+  const workDbPath = path.join(work, "stage.duckdb");
+  const db = await openWorkDb(workDbPath);
+  let dbOpen = true;
   try {
     await seedFixtureStaging(db);
     await deriveAll(db, { asOf: FIXTURE_AS_OF, log });
@@ -273,6 +278,24 @@ export async function makeFixture(outDir: string, opts: { log?: (m: string) => v
       path.join(runDir, "meta", "coverage.json"),
       `${JSON.stringify({ schema: "oracle.coverage.v1", run_id: "fixture", fixture: true, geo_status: Object.fromEntries(geo.map((g) => [g.geo_status, g.n])), sources: [], permit_coverage: pc }, null, 2)}\n`,
     );
+    const builtGroups = groups.map((g) => ({
+      group: g.group,
+      archiveRoot: g.archive_root,
+      tablesRoot: g.tables_root,
+      properties: g.properties,
+      tables: g.tables,
+    }));
+    await writeFile(
+      path.join(runDir, "meta", "state.json"),
+      `${JSON.stringify({ schema: "oracle.run-state.v1", run_id: "fixture", mode: "fixture", as_of: FIXTURE_AS_OF, status: "indexed", synthetic: true, elephant_cli: { version: await cli.version(), layout: "packed", part_size: PART_SIZE, build: "pinned" }, groups: builtGroups }, null, 2)}\n`,
+    );
+    // QA report over the fixture index, like `oracle index` does for a real run.
+    await db.close();
+    dbOpen = false;
+    const indexPath = path.join(work, "index.duckdb");
+    await buildIndex({ runDir, asOf: FIXTURE_AS_OF, runId: "fixture" }, indexPath, { log });
+    const qa = await qaReport({ indexPath, runDir, runId: "fixture", workDbPath });
+    await writeFile(path.join(runDir, "meta", "qa.json"), `${JSON.stringify(qa, null, 2)}\n`);
     await rm(outDir, { recursive: true, force: true });
     await mkdir(outDir, { recursive: true });
     for (const d of ["tables", "supplement", "meta"])
@@ -283,7 +306,7 @@ export async function makeFixture(outDir: string, opts: { log?: (m: string) => v
     );
     return outDir;
   } finally {
-    await db.close();
+    if (dbOpen) await db.close();
     delete process.env.ORACLE_FIXTURE_PROVENANCE;
     await rm(work, { recursive: true, force: true });
   }

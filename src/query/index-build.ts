@@ -1,7 +1,11 @@
 import { existsSync } from "node:fs";
 import { readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { ROOFING_VIEWS_VERSION, createRoofingViews } from "../views/roofing-views.ts";
+import {
+  ROOFING_VIEWS_VERSION,
+  createRoofingViews,
+  materializeRoofingViews,
+} from "../views/roofing-views.ts";
 import { openWorkDb, type WorkDb } from "../work-db.ts";
 import { buildVectorIndex } from "./embeddings.ts";
 
@@ -44,7 +48,12 @@ async function tableExists(db: WorkDb, name: string): Promise<boolean> {
 export async function buildIndex(
   src: { runDir: string; asOf: string; runId: string },
   outPath: string,
-  opts: { log?: (m: string) => void; vectors?: boolean } = {},
+  opts: {
+    log?: (m: string) => void;
+    vectors?: boolean;
+    /** Injected embedder (tests); defaults to the local MiniLM model. */
+    embedder?: (texts: string[]) => Promise<number[][]>;
+  } = {},
 ): Promise<IndexBuildResult> {
   const log = opts.log ?? (() => {});
   await rm(outPath, { force: true });
@@ -100,6 +109,7 @@ export async function buildIndex(
     log(`index: ${Object.keys(tables).length} tables loaded`);
 
     await createRoofingViews(db, { asOf: src.asOf });
+    await materializeRoofingViews(db);
     const views: Record<string, number> = {};
     for (const v of ["v_property", "v_roof_permit", "v_contractor", "v_business", "v_owner"]) {
       const n = await db.one<{ n: number }>(`select count(*)::INTEGER n from ${v}`);
@@ -124,7 +134,7 @@ export async function buildIndex(
     const vectors =
       opts.vectors === false
         ? { docs: 0, model: null, status: "skipped" as const, reason: "disabled (--no-vectors)" }
-        : await buildVectorIndex(db, { log });
+        : await buildVectorIndex(db, { log, embedder: opts.embedder });
 
     await db.run(`create or replace table index_meta as select '${ROOFING_VIEWS_VERSION}' as views_version,
       '${src.runId}' as run_id, '${src.asOf}' as as_of, now()::VARCHAR as built_at,

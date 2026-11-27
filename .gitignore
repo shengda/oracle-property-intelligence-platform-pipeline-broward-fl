@@ -15,3 +15,6 @@ bin/*.tar.gz
 !.env.example
 .DS_Store
 !fixtures/elephant-mini/**
+ui/dist/
+test-results/
+playwright-report/

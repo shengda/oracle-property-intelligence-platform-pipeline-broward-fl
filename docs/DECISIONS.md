@@ -122,6 +122,39 @@ regardless and never bypassed.
   They are keyed by `parcel_identifier`, permit key and DBPR license id, and never contain owner
   names.
 
+## M2 — query layer, MCP, Explorer, agent
+
+- **Materialized roofing views.** `oracle index` stores each `roofing-views.v1` view as a table
+  (`mv_<view>`, ordered by location, ART-indexed on its keys) and redefines `v_<view>` as
+  `select * from mv_<view>`. Names and columns are unchanged; a 5-mile aged-roof query dropped from
+  ~1 s to 20–140 ms on the 766k-parcel run. Index size 2.6 → 2.9 GB.
+- **Radius = bbox prefilter + haversine in plain SQL** (no spatial extension at query time, no
+  axis-order ambiguity); the same formula runs in DuckDB-WASM on the proof page, which must return
+  the API's rows exactly.
+- **Place names** resolve from `src/data/broward-places.json`: Census Gazetteer internal points
+  filtered by the cb_2024 county polygon (37 places). The ingest-time `ref_places` used the county
+  bbox and kept 5 Miami-Dade places (Aventura, Golden Beach, Ives Estates, Ojus, Watergate); they
+  are not used for resolution.
+- **One tool registry** (`src/tools/registry.ts`) feeds the MCP server and the agent. Tools take a
+  flat `lat`/`lon`, default to 25 rows (max 500) so answers fit a model's context, return
+  `total_matching` for the two README questions, and always carry `notes` naming what is missing
+  (uncovered permit jurisdictions, BBB blocked, the frozen Fort Lauderdale layer, unpublished run).
+- **MCP over HTTP is stateless** (new server + transport per request, JSON responses, POST only,
+  60–120 requests/min per IP) so any Lambda instance can answer in M5.
+- **Agent:** Vercel AI SDK `generateText` + `@ai-sdk/anthropic`, default model `claude-opus-5-5`
+  (`ORACLE_AGENT_MODEL` overrides), `stepCountIs(8)`, 90 s timeout. Only the answer text comes from
+  the model; steps, map results, citations (only tool-returned identifiers), assumptions, missing
+  data and the follow-up context are derived from the AI SDK step results.
+- **API responses are validated against the `contract` schemas** before they are sent (500 with the
+  issues if not), so the CRM can rely on the published shapes.
+- **Browser tests** run on the fixture with a scripted mock model (`ui/e2e/server.ts`, test-only).
+  Playwright 1.65 ships no Chromium for macOS 12, so local runs use the installed Google Chrome
+  (`channel: "chrome"`); CI on Linux uses the bundled Chromium.
+- **Map tiles** are OpenStreetMap raster tiles with attribution (light, interactive inspection
+  use); M5 may switch to a hosted tile style.
+- **Fort Lauderdale "open" permits** come from a layer frozen in January 2021: open durations are
+  counted to today and every open-permit answer says so.
+
 ## Kit deviations (architecture §0.1, kept current)
 
 | Kit rule (source) | Our choice | Why |

@@ -20,3 +20,8 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          CI: "1"
+          PW_BUNDLED_CHROMIUM: "1"
