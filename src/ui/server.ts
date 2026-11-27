@@ -455,7 +455,8 @@ export async function startUiServer(
   }
   const staticDir = opts.staticDir === undefined ? UI_DIST : opts.staticDir;
   if (staticDir && existsSync(path.join(staticDir, "index.html"))) {
-    await app.register(fastifyStatic, { root: staticDir, prefix: "/", wildcard: false });
+    // wildcard: resolve files per request, so a UI rebuild (new hashed names) needs no restart.
+    await app.register(fastifyStatic, { root: staticDir, prefix: "/", wildcard: true });
     app.setNotFoundHandler((req, reply) =>
       req.url.startsWith("/api/") || req.url.startsWith("/files/")
         ? reply.code(404).send({ error: "not found" })
