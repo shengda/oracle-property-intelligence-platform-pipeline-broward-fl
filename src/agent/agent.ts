@@ -4,6 +4,7 @@
  * assumptions, the search context for follow-ups) is derived from the AI SDK step results, so
  * the panel shows what was actually retrieved and citations can only name tool-returned records.
  */
+import { envPositiveNumber } from "../util/env.ts";
 import { generateText, stepCountIs, type LanguageModel, type ModelMessage } from "ai";
 import { AgentAnswer, AgentRequest, type AgentContext, type ChatTurn } from "../contract/index.ts";
 import type { SnapshotDb } from "../query/db.ts";
@@ -290,6 +291,6 @@ export async function agentFromEnv(db: SnapshotDb, env = process.env): Promise<O
     db,
     model: anthropic(modelId),
     modelId,
-    timeoutMs: Number(env.ORACLE_AGENT_TIMEOUT_MS ?? 90_000),
+    timeoutMs: envPositiveNumber(env, "ORACLE_AGENT_TIMEOUT_MS", 90_000),
   });
 }

@@ -1,4 +1,5 @@
 import { createRateLimiter } from "../mcp/rate-limit.ts";
+import { envPositiveNumber } from "../util/env.ts";
 
 /** Per-IP request limit plus a daily token budget for the whole server (UTC day). */
 export interface BudgetGuard {
@@ -46,7 +47,7 @@ export function createBudgetGuard(opts: {
 
 export function budgetFromEnv(env = process.env): BudgetGuard {
   return createBudgetGuard({
-    dailyTokens: Number(env.ORACLE_AGENT_DAILY_TOKENS ?? 3_000_000),
-    perIpPerMinute: Number(env.ORACLE_AGENT_PER_IP_PER_MINUTE ?? 6),
+    dailyTokens: envPositiveNumber(env, "ORACLE_AGENT_DAILY_TOKENS", 3_000_000),
+    perIpPerMinute: envPositiveNumber(env, "ORACLE_AGENT_PER_IP_PER_MINUTE", 6),
   });
 }

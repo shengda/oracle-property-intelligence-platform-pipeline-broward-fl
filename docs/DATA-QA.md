@@ -65,5 +65,5 @@ above still applies. What changed:
 - The permit dedup is now deterministic (latest update wins among duplicate source rows). Small
   shifts: open roofing permits in Fort Lauderdale 1,589 (551 → 550 with a license number, 476 →
   475 resolved in DBPR); roof-age basis permit 2,728 / year built 713,790; demo radius (5 mi of Fort
-  Lauderdale) 129,251 aged roofs and 1,497 permits open ≥ 5 years.
+  Lauderdale, Census place point) 129,671 aged roofs and 1,497 permits open ≥ 5 years.
 - QA after the rebuild: 17 pass, 4 warn, 0 fail.
