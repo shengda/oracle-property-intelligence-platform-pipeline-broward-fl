@@ -51,12 +51,7 @@ select parcel_id, case when lat is null or lon is null then 'missing_geometry'
   log("derive: geometry status");
 
   // 2. Permits: one row per permit key (Weston closed report wins over issued), matched to parcels.
-  await db.run(`create or replace table drv_permits as
-select * exclude (rn) from (
-  select p.*, row_number() over (partition by p.permit_key
-      order by case when p.close_date is not null then 0 else 1 end, p.source_key) rn
-  from stg_permits p
-) where rn = 1`);
+  await createDrvPermits(db);
   await matchPermitsByAddress(db, log);
   const permits = await db.all<any>(
     `select permit_key, raw_status, status, issue_date, application_date from drv_permits`,
@@ -272,4 +267,20 @@ from drv_permits d left join drv_permit_addr_match m using (permit_key)`);
        count(*) filter (parcel_match_method is null)::INTEGER unmatched from drv_permits`,
   );
   log(`derive: permit→parcel links folio ${r?.folio}, address ${r?.addr}, unmatched ${r?.unmatched}`);
+}
+
+/**
+ * One row per permit key. A source can list a permit more than once (519 keys in the real FTL
+ * and Weston data, 32 of them with differing statuses), so the choice must be total: the closed
+ * record wins (Weston closed report over issued), then the source, then the latest update, and
+ * finally a hash of the row's content, so the same input always keeps the same row.
+ */
+export async function createDrvPermits(db: WorkDb): Promise<void> {
+  await db.run(`create or replace table drv_permits as
+select * exclude (rn) from (
+  select p.*, row_number() over (partition by p.permit_key
+      order by case when p.close_date is not null then 0 else 1 end, p.source_key,
+        p.last_update_date desc nulls last, md5(to_json(p)::VARCHAR)) rn
+  from stg_permits p
+) where rn = 1`);
 }

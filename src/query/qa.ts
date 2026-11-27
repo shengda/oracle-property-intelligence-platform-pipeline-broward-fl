@@ -255,6 +255,29 @@ export async function qaReport(opts: {
       detail:
         "Municipal portals skipped (too_slow) or blocked; elsewhere roof age falls back to year built and open-permit queries return nothing.",
     });
+    const pi = coverage.groups?.property_improvement;
+    if (pi) {
+      const ids = pi.published_property_cids as { properties: number; missing: number } | undefined;
+      const atlas = pi.seed_source === "atlas";
+      add({
+        id: "permit_group_extends_published_county",
+        group: "permits",
+        title:
+          "property_improvement properties carry the Seed of the published Atlas county archive (same property CIDs)",
+        value: {
+          seed_source: pi.seed_source ?? "own",
+          atlas_county_root: pi.atlas_county_root ?? null,
+          properties: ids?.properties ?? pi.properties,
+          not_in_published_archive: ids?.missing ?? null,
+          left_out: pi.without_published_seed ?? null,
+        },
+        threshold: "pass: seed_source atlas and 0 property CIDs outside the published archive; else fail",
+        status: atlas && ids && ids.missing === 0 ? "pass" : "fail",
+        detail: atlas
+          ? `${pi.without_published_seed?.parcels ?? 0} permitted parcels (${pi.without_published_seed?.permits ?? 0} permits) are not in the published county archive and are left out of the group; they stay in the query views.`
+          : "Built with our own Seeds (atlas-county not ingested): the group cannot be registered next to the published county archive.",
+      });
+    }
 
     // --- roof age
     const basis = await db.all<{ b: string; n: number }>(

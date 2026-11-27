@@ -23,6 +23,9 @@ export const CENSUS_ZCTA_COUNTY_URL =
 export const CENSUS_COUNTY_BOUNDARY_URL =
   "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_county_500k.zip";
 export const SUNBIZ_DOWNLOADS_URL = "https://dos.fl.gov/sunbiz/other-services/data-downloads/";
+/** Broward's page in the Elephant registry (public repo); its county group is the published archive. */
+export const ATLAS_BROWARD_PAGE_URL =
+  "https://raw.githubusercontent.com/elephant-xyz/atlas/main/counties/FL/broward.json";
 export const BBB_ROOFING_CATEGORY_URL =
   "https://www.bbb.org/us/fl/fort-lauderdale/category/roofing-contractors";
 
@@ -89,6 +92,16 @@ export const SOURCES: SourceDescriptor[] = [
     url: DBPR_CONSTRUCTION_LICENSES_URL,
     changeMode: "file_digest",
     readmeNeed: "contractor records and licenses",
+    status: "active",
+  },
+  {
+    key: "atlas-county",
+    title: "Published Broward county archive in Atlas (Elephant registry): Seed of every property",
+    kind: "reference",
+    url: ATLAS_BROWARD_PAGE_URL,
+    changeMode: "file_digest",
+    readmeNeed:
+      "property identity shared with the published county archive, so the property_improvement group extends it",
     status: "active",
   },
   {

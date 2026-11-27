@@ -31,8 +31,9 @@ It prints the QA summary and the run directory. Step by step:
 ./bin/oracle.mjs ingest                                  # every source, in order (bulk first)
 ./bin/oracle.mjs ingest --source ftl-permits,weston-permits   # re-pull selected sources only
 ./bin/oracle.mjs ingest --source ftl-accela-contractors --accela-max-requests 4000
+./bin/oracle.mjs ingest --source atlas-county            # published Broward Seed from Atlas (~35 s)
 ./bin/oracle.mjs build                                   # new run id, both groups
-./bin/oracle.mjs build --group property_improvement --run <id>
+./bin/oracle.mjs build --group property_improvement --run <id>   # rebuild one group in place; keeps the others
 ./bin/oracle.mjs index --run <id>                        # writes meta/qa.json last; exits 0 on failed checks
 ./bin/oracle.mjs query "select city, count(*) from v_property where roof_age_years >= 15 group by 1 order by 2 desc"
 ```
@@ -65,6 +66,7 @@ runs/<run_id>/
 | `ftl-accela-contractors` | `bounded_crawl` | open FTL roofing permits only, 1.5 s/request, resumable |
 | `bbb`, `sunbiz` | probe | blocked (403 / login + disk); recorded, never bypassed |
 | `census-*` | `file_digest` | reference files |
+| `atlas-county` | `file_digest` | Broward's Atlas page + Seed tables of the published county archive (~260 MB). With it loaded, the permit group reuses the published Seeds (registrable next to the published county group); without it, the build logs that the group uses our own Seeds and QA fails `permit_group_extends_published_county` |
 
 ## M2 — inspect a run in the browser
 

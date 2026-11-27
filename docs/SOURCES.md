@@ -14,6 +14,7 @@ disk), 2026-11-27. Every source is fetched politely (per-host delay, retries wit
 | `ftl-permits` | loaded | 91,027 | 34.1 MB | 93 | 740 ms | 2 min 8 s | `859cc358e8af` | Layer is frozen: permits submitted 2018-01-08 to 2021-01-05 only; CONTRACTOR/CONTRACTID empty in every row. |
 | `hced-permits` | blocked | 0 | — | 2 | — | 1 s | — | Not loaded: ArcGIS query error: {"code":400,"message":"Failed to execute query.","details":[]}. Stopped without retrying around the boundary. (server_error) |
 | `weston-permits` | active | — | — | — | — | — | — | Rolling report of recently issued/closed permits only (hundreds of rows), not full history. |
+| `atlas-county` | loaded | 754,269 | 262.1 MB | 5 | 3828 ms | 33 s | `92945d995c56` | Seed of the published Broward county archive in Atlas (`baguqeerahfw…qgyb6a`, tables `baguqeerax3x…r6tlta`), read from `ipfs.filebase.io`; added 2026-11-27 so the permit group reuses the published property identity (DECISIONS.md, M3). |
 | `dbpr-licenses` | loaded | 264,423 | 47.2 MB | 1 | 1989 ms | 4 s | `830b627fc932` |  |
 | `census-places` | loaded | 42 | 0.2 MB | 1 | 47 ms | 0 s | `7891c5a88aad` |  |
 | `census-zcta-county` | loaded | 55 | 6.8 MB | 1 | 824 ms | 1 s | `3ed41278d637` |  |

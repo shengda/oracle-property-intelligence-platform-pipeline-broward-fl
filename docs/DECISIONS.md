@@ -155,6 +155,45 @@ regardless and never bypassed.
 - **Fort Lauderdale "open" permits** come from a layer frozen in January 2021: open durations are
   counted to today and every open-permit answer says so.
 
+## M3 — what we publish, and where (decided 2026-11-27)
+
+- **Broward is already registered in Atlas** (`counties/FL/broward.json`, `county` group only,
+  archive `baguqeerahfw4wnjiumsos6e2i3r2lcmaadfuvi54o7qx75xqx2vei42wpmvq`, 754,269 properties,
+  built from the Florida Statewide Cadastral layer; registered 2026-11-12, refreshed 2026-11-23).
+  This is the "started" pipeline the README describes. Elephant hosts it after the Atlas merge.
+- **We register a `property_improvement` group next to it**, the pattern of Cobb, GA (atlas#191):
+  `groups.county` stays byte for byte; our group adds Fort Lauderdale and Weston permits,
+  contractors and licenses.
+- **Same property identity as the published archive.** A property CID is the CID of its Seed
+  (parcel + address + the request that produced them). Our M1 Seeds came from the BCPA roll
+  request, so 0 of 749,012 shared parcels had the published CID. The new `atlas-county` source
+  downloads the published Seed tables (`parcel`, `address`, `address_has_parcel`; the
+  `CountyTables` block is checked against its CID, each part against its recorded size) and the
+  permit transform reuses each parcel's published Seed. Rebuilding an entity from its
+  export-tables row with null columns dropped reproduces it exactly: all 26,663 property CIDs of the
+  group are properties of the published archive, and the build fails if any is not
+  (`checkPublishedPropertyCids`, QA check `permit_group_extends_published_county`).
+- **Left out:** 530 permitted parcels (3,345 permits) the published archive does not hold. They
+  stay in our query views; they need a county superset to be registered.
+- **Our own county archive is not published.** It stays the local source of the query database
+  (more parcels, full sales history, structures and roof age than the published one). Replacing the
+  published `county` group would have to be a proven superset of it (Atlas convention, e.g.
+  atlas#180, #197: no published record dropped), including its 573,130 individual owner records,
+  which conflicts with our no-owner-PII default (Open Q3). Deferred as a follow-up.
+- **The DuckDB index is not published** (2.9 GB). `oracle sync` rebuilds it from the published
+  Parquet. Published per run: the `property_improvement` archive + tables (~0.15 GB), query views,
+  samples, `meta/*.json` and the run manifest (~0.1 GB), so two free pinning tiers suffice.
+- **Permit dedup made deterministic (found while rebuilding).** 519 permit keys have duplicate
+  source rows (32 with differing statuses); the old ordering left ties, so a re-derive could keep a
+  different row (3 statuses flipped between two derives of the same input). The choice is now
+  total: closed record, source, latest update, then a content hash (`createDrvPermits`). The run's
+  permit group, supplement and index were rebuilt with it; its local (unpublished) county archive
+  keeps the earlier derive until the next full run.
+- **Gateways (observed 2026-11-27):** `ipfs.io` answers path requests with a "service worker
+  gateway only" notice and `dweb.link` redirects or rate-limits; `ipfs.filebase.io` serves. M3
+  verification must handle this or use other independent gateways (README names these two only
+  as examples).
+
 ## Kit deviations (architecture §0.1, kept current)
 
 | Kit rule (source) | Our choice | Why |
@@ -173,7 +212,9 @@ regardless and never bypassed.
 
 ## Open questions (architecture §9) — status
 
-Not yet sent to the assigner (the operator sends them): Atlas access (Q1), deadline (Q4),
+Q1 (Atlas access): the repository is public; a registration is a pull request from a fork that
+needs a code-owner approval (`.github/CODEOWNERS`) and a green `validate`.
+Not yet sent to the assigner (the operator sends them): deadline (Q4),
 owner-name policy (Q3 — default applied meanwhile), BBB score handling (Q7 — source blocked).
 Q8 (designated Oracle repo) is answered by the fork parent:
 `prismteam-ai/oracle-property-intelligence-platform-pipeline-broward-fl`.

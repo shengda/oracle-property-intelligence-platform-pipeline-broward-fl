@@ -52,3 +52,18 @@ recorded at the bottom.
 | Accept frozen Fort Lauderdale permit statuses (documented per answer) | accepted | run owner | 2026-11-27 |
 | Spot check of the 20 parcels against bcpa.net | accepted | run owner | 2026-11-27 |
 | Publish run 20261127T132618Z-full in M3 | approved | run owner | 2026-11-27 |
+
+## Addendum — 2026-11-27, after sign-off (M3 preparation)
+
+The run's `property_improvement` group, supplement tables and index were rebuilt; the sign-off
+above still applies. What changed:
+
+- The permit group now reuses the Seed of the published Atlas county archive, so its 26,663
+  properties are properties of that archive (new QA check `permit_group_extends_published_county`:
+  pass). 530 permitted parcels (3,345 permits) are not in that archive and are left out of the
+  group; they stay in the query views. See `DECISIONS.md`, M3.
+- The permit dedup is now deterministic (latest update wins among duplicate source rows). Small
+  shifts: open roofing permits in Fort Lauderdale 1,589 (551 → 550 with a license number, 476 →
+  475 resolved in DBPR); roof-age basis permit 2,728 / year built 713,790; demo radius (5 mi of Fort
+  Lauderdale) 129,251 aged roofs and 1,497 permits open ≥ 5 years.
+- QA after the rebuild: 17 pass, 4 warn, 0 fail.

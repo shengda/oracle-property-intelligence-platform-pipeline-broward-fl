@@ -2,6 +2,7 @@ import { readFile, statfs, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { PATHS } from "./config.ts";
 import { enrichFtlContractors } from "./sources/accela-ftl.ts";
+import { loadAtlasCountySeed } from "./sources/atlas-county.ts";
 import { downloadBcpaTaxroll, stageBcpaTaxroll } from "./sources/bcpa-taxroll.ts";
 import { loadCensusPlaces, loadCensusZcta, loadCountyBoundary } from "./sources/census.ts";
 import { loadDbprLicenses } from "./sources/dbpr.ts";
@@ -32,6 +33,7 @@ export const INGEST_ORDER = [
   "census-county-boundary",
   "bcpa-taxroll",
   "bcpa-taxroll-full",
+  "atlas-county",
   "ftl-permits",
   "weston-permits",
   "hced-permits",
@@ -134,6 +136,8 @@ async function runSource(
         },
       ];
     }
+    case "atlas-county":
+      return [await loadAtlasCountySeed(db, { rawDir: raw, retrievedAt: ctx.retrievedAt, log: ctx.log })];
     case "ftl-permits":
     case "hced-permits": {
       const feed = PERMIT_FEEDS.find((f) => f.key === key)!;

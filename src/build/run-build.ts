@@ -38,7 +38,48 @@ export interface RunState {
     string,
     { sha256?: string; retrieved_at: string; records: number; window?: { from: string; to: string } }
   >;
+  /** Groups rebuilt into this run after it was first built (unpublished runs only). */
+  rebuilt?: { at: string; groups: GroupKey[] }[];
   error?: string;
+}
+
+async function readJson<T>(file: string): Promise<T | null> {
+  try {
+    return JSON.parse(await readFile(file, "utf8")) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function readRunState(dir: string): Promise<RunState | null> {
+  return readJson<RunState>(path.join(dir, "meta", "state.json"));
+}
+
+async function hasTable(db: Awaited<ReturnType<typeof openWorkDb>>, name: string): Promise<boolean> {
+  const r = await db.one<{ n: number }>(
+    `select count(*)::INTEGER n from information_schema.tables where table_name = '${name}'`,
+  );
+  return (r?.n ?? 0) > 0;
+}
+
+/**
+ * Every property CID that hash gave the property_improvement group must be a property of the
+ * published county archive: that is what lets Atlas register the group next to it.
+ */
+export async function checkPublishedPropertyCids(
+  db: Awaited<ReturnType<typeof openWorkDb>>,
+  hashCsv: string,
+): Promise<{ properties: number; matched: number; missing: number; sample: string[] }> {
+  const csv = hashCsv.replace(/'/g, "''");
+  const r = await db.one<{ n: number; m: number }>(`select count(*)::INTEGER n,
+      count(*) filter (where property_cid in (select property_cid from ref_atlas_seed))::INTEGER m
+    from (select distinct propertyCid as property_cid from read_csv('${csv}', header=true, all_varchar=true))`);
+  const sample = await db.all<{ c: string }>(`select distinct propertyCid c
+    from read_csv('${csv}', header=true, all_varchar=true)
+    where propertyCid not in (select property_cid from ref_atlas_seed) limit 3`);
+  const n = r?.n ?? 0;
+  const m = r?.m ?? 0;
+  return { properties: n, matched: m, missing: n - m, sample: sample.map((x) => x.c) };
 }
 
 export function newRunId(mode: string, now = new Date()): string {
@@ -74,7 +115,7 @@ export async function build(opts: {
   const mode = opts.mode ?? "full";
   const runId = opts.runId ?? newRunId(mode);
   const dir = runDir(runId);
-  const asOf = opts.asOf ?? new Date().toISOString().slice(0, 10);
+  const requestedAsOf = opts.asOf ?? new Date().toISOString().slice(0, 10);
   const groups: GroupKey[] = opts.groups?.length ? opts.groups : ["county", "property_improvement"];
   await mkdir(path.join(dir, "meta"), { recursive: true });
   const cli = createElephantCli();
@@ -82,19 +123,27 @@ export async function build(opts: {
   const pinned = (
     await readFile(path.join(REPO_ROOT, "elephant-cli.version"), "utf8").catch(() => "")
   ).trim();
-  const previous = await latestRun(runId);
   const sourcesFile = await readSourcesFile();
+  // Rebuilding some groups of an existing run keeps the other groups, the run's start time and
+  // its place in the run chain; only the rebuilt groups' entries are replaced.
+  const prior = await readRunState(dir);
+  const asOf = prior?.as_of ?? requestedAsOf;
+  const previous = prior ? prior.previous_run_id : await latestRun(runId);
+  const priorCoverage = prior
+    ? await readJson<{ groups?: Record<string, unknown> }>(path.join(dir, "meta", "coverage.json"))
+    : null;
   const state: RunState = {
     schema: "oracle.run-state.v1",
     run_id: runId,
-    mode,
+    mode: prior?.mode ?? mode,
     as_of: asOf,
-    started_at: new Date().toISOString(),
+    started_at: prior?.started_at ?? new Date().toISOString(),
+    ...(prior ? { rebuilt: [...(prior.rebuilt ?? []), { at: new Date().toISOString(), groups }] } : {}),
     status: "building",
     elephant_cli: { version, build: pinned, layout: "packed", part_size: PART_SIZE },
     lexicon_manifest_url: "https://lexicon.elephant.xyz/api/manifest",
     previous_run_id: previous,
-    groups: [],
+    groups: (prior?.groups ?? []).filter((g) => !groups.includes(g.group)),
     watermarks: Object.fromEntries(
       Object.values(sourcesFile.sources).map((s) => [
         s.key,
@@ -116,8 +165,11 @@ export async function build(opts: {
     log(`build ${runId}: deriving work tables (as of ${asOf})`);
     await deriveAll(db, { asOf, log });
     const manifest = await loadLexiconManifest();
-    const deltas: Record<string, Deltas> = {};
-    const groupStats: Record<string, unknown> = {};
+    const priorDeltas = prior
+      ? await readJson<{ groups?: Record<string, Deltas> }>(path.join(dir, "meta", "deltas.json"))
+      : null;
+    const deltas: Record<string, Deltas> = { ...(priorDeltas?.groups ?? {}) };
+    const groupStats: Record<string, unknown> = { ...(priorCoverage?.groups ?? {}) };
     for (const g of groups) {
       const groupDir = path.join(dir, "groups", g);
       if (g === "county") {
@@ -129,16 +181,36 @@ export async function build(opts: {
         });
       } else {
         const ctx = await groupContext(manifest, "Property Improvement");
+        const seedSource = (await hasTable(db, "ref_atlas_seed")) ? "atlas" : "own";
+        if (seedSource === "own") {
+          log(
+            "build property_improvement: no published Seed loaded (oracle ingest --sources atlas-county); using our own Seeds — this group cannot be registered in Atlas",
+          );
+        }
         groupStats.property_improvement = await buildPropertyImprovementGroup(db, groupDir, ctx, {
           parcels: opts.parcels,
+          seedSource,
           log,
         });
       }
       log(`build ${g}: elephant-cli validate → hash → validate CAR → export-tables`);
       const r = await buildGroup(g, groupDir, path.join(dir, "build"), cli, { partSize: PART_SIZE });
+      if (g === "property_improvement" && (groupStats.property_improvement as any).seed_source === "atlas") {
+        const check = await checkPublishedPropertyCids(db, path.join(dir, "build", `${g}-hash.csv`));
+        (groupStats.property_improvement as any).published_property_cids = check;
+        if (check.missing > 0) {
+          throw new Error(
+            `property_improvement: ${check.missing} of ${check.properties} property CIDs are not in the published county archive (e.g. ${check.sample.join(", ")})`,
+          );
+        }
+        log(
+          `build ${g}: all ${check.properties} property CIDs are properties of the published county archive`,
+        );
+      }
       log(
         `build ${g}: ${r.properties} properties, archive ${r.archiveRoot}, tables ${r.tablesRoot} (not_packed ${r.notPacked}; ${Math.round(r.timingsMs.hash / 1000)} s hash)`,
       );
+      state.groups = state.groups.filter((x) => x.group !== r.group);
       state.groups.push({
         group: r.group,
         archiveRoot: r.archiveRoot,
