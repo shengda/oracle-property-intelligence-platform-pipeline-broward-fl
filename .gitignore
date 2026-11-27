@@ -1,0 +1,17 @@
+node_modules/
+dist/
+work/
+runs/
+cache/
+cdk.out/
+bin/elephant-cli
+bin/*.tar.gz
+*.car
+*.parquet
+*.zip
+*.duckdb
+*.duckdb.wal
+.env*
+!.env.example
+.DS_Store
+!fixtures/elephant-mini/**

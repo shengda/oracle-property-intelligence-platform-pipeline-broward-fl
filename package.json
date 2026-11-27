@@ -1,0 +1,45 @@
+{
+  "name": "oracle-broward",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Continuous, incremental Broward County, FL property-intelligence pipeline that builds Elephant Lexicon data groups, derived DuckDB query artifacts and IPFS-ready run manifests.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "oracle": "./bin/oracle.mjs"
+  },
+  "exports": {
+    "./client": "./dist/client/index.js",
+    "./contract": "./dist/contract/index.js"
+  },
+  "scripts": {
+    "oracle": "tsx src/cli.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "tsc -p tsconfig.build.json || true",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "install:elephant-cli": "bash scripts/install-elephant-cli.sh",
+    "fixture": "tsx scripts/make-fixture.ts"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.6-r.2",
+    "@huggingface/transformers": "^3.7.6",
+    "commander": "^14.0.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.30.0",
+    "prettier": "^3.6.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.0"
+  }
+}

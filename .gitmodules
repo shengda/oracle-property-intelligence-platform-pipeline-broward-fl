@@ -1,0 +1,3 @@
+[submodule "vendor/soofi-xyz-team-kit"]
+	path = vendor/soofi-xyz-team-kit
+	url = https://github.com/soofi-xyz/soofi-xyz-team-kit.git

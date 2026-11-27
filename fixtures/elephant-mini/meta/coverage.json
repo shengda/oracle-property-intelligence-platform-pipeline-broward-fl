@@ -1,0 +1,499 @@
+{
+  "schema": "oracle.coverage.v1",
+  "run_id": "fixture",
+  "fixture": true,
+  "geo_status": {
+    "parcel_centroid": 50
+  },
+  "sources": [],
+  "permit_coverage": [
+    {
+      "jurisdiction": "unincorporated-broward",
+      "name": "Unincorporated Broward County",
+      "cities": [
+        "UNINCORPORATED BROWARD",
+        "UNINCORPORATED BROWARD COUNTY",
+        "UNINCORPORATED",
+        "BROWARD COUNTY"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "hollywood",
+      "name": "Hollywood",
+      "cities": [
+        "HOLLYWOOD"
+      ],
+      "status": "skipped",
+      "parcels": 10,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "plantation",
+      "name": "Plantation",
+      "cities": [
+        "PLANTATION"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "fort-lauderdale",
+      "name": "Fort Lauderdale",
+      "cities": [
+        "FORT LAUDERDALE"
+      ],
+      "status": "covered",
+      "parcels": 20,
+      "permits": 15,
+      "roofingPermits": 13,
+      "source": "ftl-permits",
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "coral-springs",
+      "name": "Coral Springs",
+      "cities": [
+        "CORAL SPRINGS"
+      ],
+      "status": "blocked",
+      "parcels": 10,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "pompano-beach",
+      "name": "Pompano Beach",
+      "cities": [
+        "POMPANO BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "davie",
+      "name": "Davie",
+      "cities": [
+        "DAVIE"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "pembroke-pines",
+      "name": "Pembroke Pines",
+      "cities": [
+        "PEMBROKE PINES"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "coconut-creek",
+      "name": "Coconut Creek",
+      "cities": [
+        "COCONUT CREEK"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "cooper-city",
+      "name": "Cooper City",
+      "cities": [
+        "COOPER CITY"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "dania-beach",
+      "name": "Dania Beach",
+      "cities": [
+        "DANIA BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "deerfield-beach",
+      "name": "Deerfield Beach",
+      "cities": [
+        "DEERFIELD BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "hallandale-beach",
+      "name": "Hallandale Beach",
+      "cities": [
+        "HALLANDALE BEACH"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "hillsboro-beach",
+      "name": "Hillsboro Beach",
+      "cities": [
+        "HILLSBORO BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lauderdale-lakes",
+      "name": "Lauderdale Lakes",
+      "cities": [
+        "LAUDERDALE LAKES"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lauderdale-by-the-sea",
+      "name": "Lauderdale-by-the-Sea",
+      "cities": [
+        "LAUDERDALE-BY-THE-SEA",
+        "LAUDERDALE BY THE SEA"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "lauderhill",
+      "name": "Lauderhill",
+      "cities": [
+        "LAUDERHILL"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lazy-lake",
+      "name": "Lazy Lake",
+      "cities": [
+        "LAZY LAKE"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "lighthouse-point",
+      "name": "Lighthouse Point",
+      "cities": [
+        "LIGHTHOUSE POINT"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "margate",
+      "name": "Margate",
+      "cities": [
+        "MARGATE"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "miramar",
+      "name": "Miramar",
+      "cities": [
+        "MIRAMAR"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "north-lauderdale",
+      "name": "North Lauderdale",
+      "cities": [
+        "NORTH LAUDERDALE"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "oakland-park",
+      "name": "Oakland Park",
+      "cities": [
+        "OAKLAND PARK"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "parkland",
+      "name": "Parkland",
+      "cities": [
+        "PARKLAND"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "pembroke-park",
+      "name": "Pembroke Park",
+      "cities": [
+        "PEMBROKE PARK"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "sea-ranch-lakes",
+      "name": "Sea Ranch Lakes",
+      "cities": [
+        "SEA RANCH LAKES"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: custodian-only; never bypassed.",
+      "kitStatus": "custodian-only"
+    },
+    {
+      "jurisdiction": "southwest-ranches",
+      "name": "Southwest Ranches",
+      "cities": [
+        "SOUTHWEST RANCHES"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "sunrise",
+      "name": "Sunrise",
+      "cities": [
+        "SUNRISE"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "tamarac",
+      "name": "Tamarac",
+      "cities": [
+        "TAMARAC"
+      ],
+      "status": "blocked",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "west-park",
+      "name": "West Park",
+      "cities": [
+        "WEST PARK"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "weston",
+      "name": "Weston",
+      "cities": [
+        "WESTON"
+      ],
+      "status": "skipped",
+      "parcels": 10,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "wilton-manors",
+      "name": "Wilton Manors",
+      "cities": [
+        "WILTON MANORS"
+      ],
+      "status": "skipped",
+      "parcels": 0,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    }
+  ]
+}
