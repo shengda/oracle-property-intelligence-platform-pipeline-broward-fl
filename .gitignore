@@ -1,7 +1,13 @@
 node_modules/
 dist/
 work/
-runs/
+runs/*/*
+# Each run's published manifest, run history and verification, plus its QA / coverage / deltas,
+# are kept in git (small JSON). sources.json and state.json stay local: older copies hold local paths.
+!runs/*/publish/
+!runs/*/meta/
+runs/*/meta/sources.json
+runs/*/meta/state.json
 cache/
 cdk.out/
 bin/elephant-cli

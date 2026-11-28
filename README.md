@@ -1,7 +1,9 @@
 # Oracle Property Intelligence Platform Pipeline - Broward County, FL
 
 > **Hosted:** https://jbahdp5wn5czd3bj2trxjjz6ha0tfyzg.lambda-url.us-east-2.on.aws/ (public, read-only) ·
-> MCP: `…/mcp` · health: `…/api/health` · deployment: [`deploy/README.md`](deploy/README.md)
+> MCP: `…/mcp` · health: `…/api/health` · deployment: [`deploy/README.md`](deploy/README.md) ·
+> published runs (manifest CIDs, run history, verification): [`runs/`](runs/) and
+> [`docs/DEMO.md`](docs/DEMO.md)
 
 ## Context
 

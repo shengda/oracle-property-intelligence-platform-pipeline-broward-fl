@@ -97,14 +97,34 @@ function lim(n: number | undefined): number {
 
 export async function findAgedRoofs(db: SnapshotDb, input: unknown): Promise<PropertyLead[]> {
   const q = AgedRoofsQuery.parse(input);
+  const where = `${radiusSql(q.center, q.radiusMiles, "p")} and p.roof_age_years >= ${num(q.minRoofAgeYears)}`;
+  const dist = distanceSql(q.center, "p");
+  if (q.order === "spread") {
+    // A grid of about SPREAD_CELLS x SPREAD_CELLS over the circle: take the oldest roof of every cell,
+    // then the second oldest of every cell, and so on, so a capped list covers the whole radius.
+    const cellLat = (2 * q.radiusMiles) / 69.0 / SPREAD_CELLS;
+    const cellLon = (2 * q.radiusMiles) / (69.172 * Math.cos((q.center.lat * Math.PI) / 180)) / SPREAD_CELLS;
+    const rows = await db.all(
+      `select * exclude (spread_rank) from (
+         select ${PROPERTY_COLS}, ${dist} as distance_miles,
+           row_number() over (
+             partition by floor(p.lat / ${num(cellLat)}), floor(p.lon / ${num(cellLon)})
+             order by p.roof_age_years desc, p.parcel_identifier) as spread_rank
+         from v_property p where ${where})
+       order by spread_rank, roof_age_years desc, parcel_identifier limit ${lim(q.limit)}`,
+    );
+    return rows.map((r) => propertyLead(db, r));
+  }
   const rows = await db.all(
-    `select ${PROPERTY_COLS}, ${distanceSql(q.center, "p")} as distance_miles from v_property p
-     where ${radiusSql(q.center, q.radiusMiles, "p")} and p.roof_age_years >= ${num(q.minRoofAgeYears)}
+    `select ${PROPERTY_COLS}, ${dist} as distance_miles from v_property p where ${where}
      order by ${q.order === "nearest" ? "distance_miles, p.roof_age_years desc" : "p.roof_age_years desc, distance_miles"},
        p.parcel_identifier limit ${lim(q.limit)}`,
   );
   return rows.map((r) => propertyLead(db, r));
 }
+
+/** Grid cells per side for `order: "spread"` (about 300 cells fall inside the circle). */
+const SPREAD_CELLS = 20;
 
 /** Number of properties matching an aged-roofs query (ignores `limit`). */
 export async function countAgedRoofs(db: SnapshotDb, input: unknown): Promise<number> {

@@ -1,0 +1,192 @@
+{
+  "schema": "oracle.run-history.v1",
+  "county": "FL/Broward",
+  "runs": [
+    {
+      "run_id": "20261127T132618Z-full",
+      "mode": "full",
+      "simulated": false,
+      "as_of": "2026-11-27",
+      "started_at": "2026-11-27T13:26:18.157Z",
+      "finished_at": "2026-11-27T19:59:53.389Z",
+      "sources": {
+        "census-zcta-county": {
+          "changed": false,
+          "records": 55
+        },
+        "census-places": {
+          "changed": false,
+          "records": 42
+        },
+        "census-county-boundary": {
+          "changed": false,
+          "records": 1
+        },
+        "bcpa-taxroll": {
+          "changed": false,
+          "records": 554358
+        },
+        "ftl-permits": {
+          "changed": false,
+          "records": 91027
+        },
+        "weston-permits-issued": {
+          "changed": false,
+          "records": 311
+        },
+        "weston-permits-closed": {
+          "changed": false,
+          "records": 580
+        },
+        "hced-permits": {
+          "changed": null,
+          "records": 0
+        },
+        "dbpr-licenses": {
+          "changed": false,
+          "records": 264423
+        },
+        "bbb": {
+          "changed": null,
+          "records": 0
+        },
+        "sunbiz": {
+          "changed": null,
+          "records": 0
+        },
+        "municipal-permit-portals": {
+          "changed": null,
+          "records": 0
+        },
+        "records-requests": {
+          "changed": null,
+          "records": 0
+        },
+        "overture-places": {
+          "changed": null,
+          "records": 0
+        },
+        "dor-nal-sdf": {
+          "changed": null,
+          "records": 0
+        },
+        "bcpa-taxroll-full": {
+          "changed": false,
+          "records": 781388
+        },
+        "ftl-accela-contractors": {
+          "changed": null,
+          "records": 1598
+        },
+        "atlas-county": {
+          "changed": true,
+          "records": 754269
+        }
+      },
+      "deltas_by_group": {
+        "county": {
+          "added": 766044,
+          "changed": 0,
+          "removed": 0
+        },
+        "property_improvement": {
+          "added": 26663,
+          "changed": 0,
+          "removed": 0
+        }
+      },
+      "groups": [
+        {
+          "key": "property_improvement",
+          "archive_root": "baguqeera2jyy5dburmd3iykey4gkad7bzwktnj5fix4cmusjq5d3nqetpw7a",
+          "tables_root": "baguqeerawfd7gdpfwdkvzf3k4rgq4eayjr4rjnlsvj37qr7hold5s6fbuh6a"
+        }
+      ],
+      "derived": [
+        {
+          "name": "query/qd_company.parquet",
+          "cid": "bafybeib66ke3txabtrrs54vmuanhwktazgit374rqjqsx3jvtvy7ye5oke"
+        },
+        {
+          "name": "query/qd_sales.parquet",
+          "cid": "bafybeib6v3u6gwqt3zff4cuunegvcr7habniqkfzikxvmkywfhgysxslse"
+        },
+        {
+          "name": "query/qd_structure.parquet",
+          "cid": "bafybeie66lij42fyslapoz5yyuhjuxrihqncnjf2mwcmkhmqufvdaekk34"
+        },
+        {
+          "name": "query/qd_tax.parquet",
+          "cid": "bafybeidkr7nzwwp4lyburm5rlis336ascms3rnf562gf7gqesuf4na3vui"
+        },
+        {
+          "name": "query/v_business.parquet",
+          "cid": "bafybeietcwfwppu4osw264gwjat3x5orfystpet7sjjjn4e3gjdfrxl2z4"
+        },
+        {
+          "name": "query/v_contractor.parquet",
+          "cid": "bafkreigzk6uotjwq4megx5t4uctlir4uo5haw4fom6u23z257utrqfkyki"
+        },
+        {
+          "name": "query/v_owner.parquet",
+          "cid": "bafybeierfwv25gvxrnbcsffcl4bada2v4emve25tu3qatzjj4bq5qgrpwi"
+        },
+        {
+          "name": "query/v_property.parquet",
+          "cid": "bafybeib6qvs6sf6o2uhij7jeqxwvrluhyk3n6lkhtpumq6hukqxlmotjge"
+        },
+        {
+          "name": "query/v_roof_permit.parquet",
+          "cid": "bafybeiewnywatl6rl2756jxq63xyd7l3zj2x4qxpxol2zoj3tfg2qrmjoa"
+        },
+        {
+          "name": "supplement/atlas_seed.parquet",
+          "cid": "bafybeib5q3lcy6khdxymp6lhyd42khwu37jcsgx6djzuavezxh2xe4ktt4"
+        },
+        {
+          "name": "supplement/contractors.parquet",
+          "cid": "bafkreibd4log443svtky24l67svzsewim4fnph5wq67lxdzts74tw7bp2e"
+        },
+        {
+          "name": "supplement/permit_details.parquet",
+          "cid": "bafybeihztdzm4bgxxakkfxctaghpjejspho24uwosrgl2ihexs5yzim3cq"
+        },
+        {
+          "name": "supplement/places.parquet",
+          "cid": "bafkreicfkga5hef5crdethofrqklxo6aaepug7hyjyu5hynelxnio4z36e"
+        },
+        {
+          "name": "supplement/property_signals.parquet",
+          "cid": "bafybeicqcpaxm4z37sw32rhqop3vyi55ykzmaslcj56gq2otiqjaggqlga"
+        },
+        {
+          "name": "samples/aged-roofs.csv",
+          "cid": "bafkreibffkcnxgz6n7vzlv2htgmgqciz6nejrclhikegjuanvf6ng7i5am"
+        },
+        {
+          "name": "samples/contractors.csv",
+          "cid": "bafkreifu5klcrgo7tht6ke7prskercxqjpfbxpbshwh6hcskbmd36tfao4"
+        },
+        {
+          "name": "samples/long-open-permits.csv",
+          "cid": "bafkreihxqlbd7wyzwsycubxfa6anx5wc622ehvgc7ekq34vgto7g7g6fay"
+        }
+      ],
+      "qa": {
+        "status": "warn",
+        "overridden": false,
+        "cid": "bafkreihwjzam4jddgjpupxb22sy262rvw73k2svzsdrb3qautkyyrm5br4"
+      },
+      "manifest_cid": "bafkreigdrq3tmzv6wk4ymglnlncrxflgsdkcw6g4z6hmzbbtdtp4lxvdqi",
+      "previous_manifest_cid": null,
+      "verification": {
+        "ok": true,
+        "checkedAt": "2026-11-27T22:30:59.169Z",
+        "gateways": [
+          "https://ipfs.filebase.io",
+          "https://gw.ipfs-lens.dev"
+        ]
+      }
+    }
+  ]
+}

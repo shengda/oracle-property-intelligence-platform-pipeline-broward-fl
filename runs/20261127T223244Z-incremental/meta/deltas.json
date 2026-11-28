@@ -1,0 +1,19 @@
+{
+  "schema": "oracle.deltas.v1",
+  "run_id": "20261127T223244Z-incremental",
+  "previous_run_id": "20261127T132618Z-full",
+  "groups": {
+    "county": {
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 766044
+    },
+    "property_improvement": {
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 26663
+    }
+  }
+}

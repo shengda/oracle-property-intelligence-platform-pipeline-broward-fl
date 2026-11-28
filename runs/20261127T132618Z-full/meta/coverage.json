@@ -1,0 +1,755 @@
+{
+  "schema": "oracle.coverage.v1",
+  "run_id": "20261127T132618Z-full",
+  "county": {
+    "state": "FL",
+    "name": "Broward",
+    "fips": "12011"
+  },
+  "as_of": "2026-11-27",
+  "properties": 766044,
+  "geo_status": {
+    "parcel_centroid": 766044
+  },
+  "groups": {
+    "county": {
+      "properties": 766044,
+      "withGeometry": 766044,
+      "withStructure": 716902,
+      "companyOwners": 104164
+    },
+    "property_improvement": {
+      "properties": 26663,
+      "permits": 78020,
+      "unmatched": 9900,
+      "withContractor": 403,
+      "seed_source": "atlas",
+      "atlas_county_root": "baguqeerahfw4wnjiumsos6e2i3r2lcmaadfuvi54o7qx75xqx2vei42wpmvq",
+      "without_published_seed": {
+        "parcels": 530,
+        "permits": 3345
+      },
+      "published_property_cids": {
+        "properties": 26663,
+        "matched": 26663,
+        "missing": 0,
+        "sample": []
+      }
+    }
+  },
+  "sources": [
+    {
+      "key": "bcpa-taxroll",
+      "title": "Broward County Property Appraiser tax roll with parcel polygons (Broward County GIS)",
+      "readme_need": "property, ownership, sales, location/coordinates, year built",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 554358,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Latest recorded sale in this layer is 2024-09-27; some condominium units are only in bcpa-taxroll-full."
+    },
+    {
+      "key": "bcpa-taxroll-full",
+      "title": "Broward County Property Appraiser tax roll incl. condominium units (Broward County GIS, QAlert layer)",
+      "readme_need": "property records for folios missing from the primary roll layer (mostly condominium units)",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 781388,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Older snapshot (latest recorded sale 2020-03-26). Used only for folios absent from bcpa-taxroll; those parcels carry this layer's vintage and provenance."
+    },
+    {
+      "key": "ftl-permits",
+      "title": "City of Fort Lauderdale building permits (ArcGIS, Land Use Operations)",
+      "readme_need": "permits (roofing), permit status and dates",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 91027,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Layer is frozen: permits submitted 2018-01-08 to 2021-01-05 only; CONTRACTOR/CONTRACTID empty in every row."
+    },
+    {
+      "key": "hced-permits",
+      "title": "Broward County HCED (unincorporated) POSSE permits (ArcGIS)",
+      "readme_need": "permits (unincorporated Broward)",
+      "change_mode": "window",
+      "status": "blocked",
+      "records": 0,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": "server_error",
+      "limitation": "Not loaded: ArcGIS query error: {\"code\":400,\"message\":\"Failed to execute query.\",\"details\":[]}. Stopped without retrying around the boundary."
+    },
+    {
+      "key": "weston-permits",
+      "title": "City of Weston issued and closed permit reports (Accela via ArcGIS)",
+      "readme_need": "permits (rolling recent window)",
+      "change_mode": "window",
+      "status": "not_run",
+      "records": 0,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Rolling report of recently issued/closed permits only (hundreds of rows), not full history."
+    },
+    {
+      "key": "dbpr-licenses",
+      "title": "FL DBPR construction industry licensee extract",
+      "readme_need": "contractor records and licenses",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 264423,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": null
+    },
+    {
+      "key": "atlas-county",
+      "title": "Published Broward county archive in Atlas (Elephant registry): Seed of every property",
+      "readme_need": "property identity shared with the published county archive, so the property_improvement group extends it",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 754269,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Seed of the published Broward county archive baguqeerahfw4wnjiumsos6e2i3r2lcmaadfuvi54o7qx75xqx2vei42wpmvq (tables baguqeerax3xfuzyicaa6nl6djisjqpyajpm7ymhizkvi4qqznsry4ur6tlta); the property_improvement group links permits to these properties."
+    },
+    {
+      "key": "census-places",
+      "title": "Census Gazetteer places (Florida)",
+      "readme_need": "place centers for 'near [city]'",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 42,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": null
+    },
+    {
+      "key": "census-zcta-county",
+      "title": "Census 2020 ZCTA-to-county relationship file",
+      "readme_need": "Broward ZIPs for owner-location classification",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 55,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": null
+    },
+    {
+      "key": "census-county-boundary",
+      "title": "Census cartographic boundary counties 1:500k",
+      "readme_need": "county boundary for coordinate QA",
+      "change_mode": "file_digest",
+      "status": "loaded",
+      "records": 1,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": null
+    },
+    {
+      "key": "broward-municipalities",
+      "title": "Broward County municipal boundaries (Broward County GIS)",
+      "readme_need": "permit jurisdiction per parcel (coverage)",
+      "change_mode": "file_digest",
+      "status": "not_run",
+      "records": 0,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": null
+    },
+    {
+      "key": "sunbiz",
+      "title": "Florida Sunbiz corporate data (quarterly cordata)",
+      "readme_need": "business records (legal entities)",
+      "change_mode": "file_digest",
+      "status": "blocked",
+      "records": 0,
+      "skip_reason": null,
+      "estimate": {
+        "size": "~1.7 GB zipped, ~18 GB expanded",
+        "time": "5–30 min download + expand"
+      },
+      "blocker_type": "login_required",
+      "limitation": "Sunbiz cordata.zip is served from the SFTP portal (HTTP 401 without a login) and needs ~20 GB of free disk (operator machine: 18 GB free). Not loaded this run; business records come from BCPA company owners and DBPR contractor companies."
+    },
+    {
+      "key": "bbb",
+      "title": "BBB roofing contractors, Fort Lauderdale market (bounded)",
+      "readme_need": "BBB rating scores where publicly available",
+      "change_mode": "bounded_crawl",
+      "status": "blocked",
+      "records": 0,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": "http_403",
+      "limitation": "BBB returned HTTP 403 (http_403) on the first category request; stopped per the kit rule. No BBB ratings in this run; use the official BBB API for scores."
+    },
+    {
+      "key": "ftl-accela-contractors",
+      "title": "Fort Lauderdale Accela permit detail (bounded contractor lookup for open roofing permits)",
+      "readme_need": "contractor identity on open roofing permits",
+      "change_mode": "bounded_crawl",
+      "status": "loaded",
+      "records": 1598,
+      "skip_reason": null,
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Bounded to open Fort Lauderdale roofing permits (551 with a license number)."
+    },
+    {
+      "key": "municipal-permit-portals",
+      "title": "Other municipal permit portals (Accela, Tyler, Click2Gov, …) via the kit Broward profile",
+      "readme_need": "permits outside Fort Lauderdale / unincorporated",
+      "change_mode": "bounded_crawl",
+      "status": "skipped",
+      "records": 0,
+      "skip_reason": "too_slow",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "blocker_type": null,
+      "limitation": "Parcel-by-parcel portal search; 9 jurisdictions also blocked (captcha/login); skipped by the §3.7 rule."
+    },
+    {
+      "key": "records-requests",
+      "title": "Municipal public-records requests for permit ledgers",
+      "readme_need": "permits (full municipal ledgers)",
+      "change_mode": "bounded_crawl",
+      "status": "skipped",
+      "records": 0,
+      "skip_reason": "turnaround",
+      "estimate": {
+        "size": "varies",
+        "time": "days to weeks (custodian turnaround)"
+      },
+      "blocker_type": null,
+      "limitation": "Not filed: third-party turnaround exceeds the delivery window."
+    },
+    {
+      "key": "overture-places",
+      "title": "Overture Maps places (Broward bbox)",
+      "readme_need": "business records (places/POI)",
+      "change_mode": "file_digest",
+      "status": "skipped",
+      "records": 0,
+      "skip_reason": "optional_cut",
+      "estimate": {
+        "size": "20–60 MB",
+        "time": "5–15 min"
+      },
+      "blocker_type": null,
+      "limitation": "First scope cut (architecture §6.1); legal-entity business records come from Sunbiz when available."
+    },
+    {
+      "key": "dor-nal-sdf",
+      "title": "FL DOR NAL/SDF/PIN tax roll files (county 16)",
+      "readme_need": "property / sales (statewide fallback)",
+      "change_mode": "file_digest",
+      "status": "skipped",
+      "records": 0,
+      "skip_reason": "optional_cut",
+      "estimate": null,
+      "blocker_type": null,
+      "limitation": "Not needed: the Broward Property Appraiser roll (bcpa-taxroll) is the preferred source (county-seed-data order) and carries 5 sales per parcel. DOR files sit behind a SharePoint file browser."
+    }
+  ],
+  "permit_coverage": [
+    {
+      "jurisdiction": "unincorporated-broward",
+      "name": "Unincorporated Broward County",
+      "cities": [
+        "UNINCORPORATED BROWARD",
+        "UNINCORPORATED BROWARD COUNTY",
+        "UNINCORPORATED",
+        "BROWARD COUNTY"
+      ],
+      "status": "blocked",
+      "parcels": 28576,
+      "permits": 0,
+      "roofingPermits": 0,
+      "source": "hced-permits",
+      "reason": "Not loaded: ArcGIS query error: {\"code\":400,\"message\":\"Failed to execute query.\",\"details\":[]}. Stopped without retrying around the boundary.",
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "hollywood",
+      "name": "Hollywood",
+      "cities": [
+        "HOLLYWOOD"
+      ],
+      "status": "skipped",
+      "parcels": 62722,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "plantation",
+      "name": "Plantation",
+      "cities": [
+        "PLANTATION"
+      ],
+      "status": "skipped",
+      "parcels": 33296,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "fort-lauderdale",
+      "name": "Fort Lauderdale",
+      "cities": [
+        "FORT LAUDERDALE"
+      ],
+      "status": "covered",
+      "parcels": 85377,
+      "permits": 91027,
+      "roofingPermits": 7849,
+      "source": "ftl-permits",
+      "reason": "Layer is frozen: permits submitted 2018-01-08 to 2021-01-05 only; CONTRACTOR/CONTRACTID empty in every row.",
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "coral-springs",
+      "name": "Coral Springs",
+      "cities": [
+        "CORAL SPRINGS"
+      ],
+      "status": "blocked",
+      "parcels": 41612,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "pompano-beach",
+      "name": "Pompano Beach",
+      "cities": [
+        "POMPANO BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 52201,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "davie",
+      "name": "Davie",
+      "cities": [
+        "DAVIE"
+      ],
+      "status": "skipped",
+      "parcels": 34049,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "pembroke-pines",
+      "name": "Pembroke Pines",
+      "cities": [
+        "PEMBROKE PINES"
+      ],
+      "status": "skipped",
+      "parcels": 59905,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "coconut-creek",
+      "name": "Coconut Creek",
+      "cities": [
+        "COCONUT CREEK"
+      ],
+      "status": "skipped",
+      "parcels": 21883,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "cooper-city",
+      "name": "Cooper City",
+      "cities": [
+        "COOPER CITY"
+      ],
+      "status": "skipped",
+      "parcels": 12066,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "dania-beach",
+      "name": "Dania Beach",
+      "cities": [
+        "DANIA BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 14245,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "deerfield-beach",
+      "name": "Deerfield Beach",
+      "cities": [
+        "DEERFIELD BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 37430,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "hallandale-beach",
+      "name": "Hallandale Beach",
+      "cities": [
+        "HALLANDALE BEACH"
+      ],
+      "status": "skipped",
+      "parcels": 25418,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "hillsboro-beach",
+      "name": "Hillsboro Beach",
+      "cities": [
+        "HILLSBORO BEACH"
+      ],
+      "status": "blocked",
+      "parcels": 2288,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lauderdale-lakes",
+      "name": "Lauderdale Lakes",
+      "cities": [
+        "LAUDERDALE LAKES"
+      ],
+      "status": "blocked",
+      "parcels": 12709,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lauderdale-by-the-sea",
+      "name": "Lauderdale-by-the-Sea",
+      "cities": [
+        "LAUDERDALE-BY-THE-SEA",
+        "LAUDERDALE BY THE SEA"
+      ],
+      "status": "skipped",
+      "parcels": 6322,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "lauderhill",
+      "name": "Lauderhill",
+      "cities": [
+        "LAUDERHILL"
+      ],
+      "status": "blocked",
+      "parcels": 24652,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "lazy-lake",
+      "name": "Lazy Lake",
+      "cities": [
+        "LAZY LAKE"
+      ],
+      "status": "skipped",
+      "parcels": 18,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "lighthouse-point",
+      "name": "Lighthouse Point",
+      "cities": [
+        "LIGHTHOUSE POINT"
+      ],
+      "status": "blocked",
+      "parcels": 5647,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "margate",
+      "name": "Margate",
+      "cities": [
+        "MARGATE"
+      ],
+      "status": "blocked",
+      "parcels": 23223,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "miramar",
+      "name": "Miramar",
+      "cities": [
+        "MIRAMAR"
+      ],
+      "status": "skipped",
+      "parcels": 42293,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "north-lauderdale",
+      "name": "North Lauderdale",
+      "cities": [
+        "NORTH LAUDERDALE"
+      ],
+      "status": "blocked",
+      "parcels": 11551,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "oakland-park",
+      "name": "Oakland Park",
+      "cities": [
+        "OAKLAND PARK"
+      ],
+      "status": "skipped",
+      "parcels": 19440,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "parkland",
+      "name": "Parkland",
+      "cities": [
+        "PARKLAND"
+      ],
+      "status": "blocked",
+      "parcels": 13501,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "pembroke-park",
+      "name": "Pembroke Park",
+      "cities": [
+        "PEMBROKE PARK"
+      ],
+      "status": "blocked",
+      "parcels": 1942,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "sea-ranch-lakes",
+      "name": "Sea Ranch Lakes",
+      "cities": [
+        "SEA RANCH LAKES"
+      ],
+      "status": "blocked",
+      "parcels": 221,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: custodian-only; never bypassed.",
+      "kitStatus": "custodian-only"
+    },
+    {
+      "jurisdiction": "southwest-ranches",
+      "name": "Southwest Ranches",
+      "cities": [
+        "SOUTHWEST RANCHES"
+      ],
+      "status": "skipped",
+      "parcels": 3479,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "sunrise",
+      "name": "Sunrise",
+      "cities": [
+        "SUNRISE"
+      ],
+      "status": "skipped",
+      "parcels": 37259,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "tamarac",
+      "name": "Tamarac",
+      "cities": [
+        "TAMARAC"
+      ],
+      "status": "blocked",
+      "parcels": 32458,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "Kit Broward profile: blocked; never bypassed.",
+      "kitStatus": "blocked"
+    },
+    {
+      "jurisdiction": "west-park",
+      "name": "West Park",
+      "cities": [
+        "WEST PARK"
+      ],
+      "status": "skipped",
+      "parcels": 5231,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "weston",
+      "name": "Weston",
+      "cities": [
+        "WESTON"
+      ],
+      "status": "covered",
+      "parcels": 23701,
+      "permits": 891,
+      "roofingPermits": 140,
+      "source": "weston-permits-issued+weston-permits-closed",
+      "reason": "Rolling report of recently issued/closed permits only (hundreds of rows), not full history. Rolling report of recently issued/closed permits only (hundreds of rows), not full history.",
+      "kitStatus": "supported"
+    },
+    {
+      "jurisdiction": "wilton-manors",
+      "name": "Wilton Manors",
+      "cities": [
+        "WILTON MANORS"
+      ],
+      "status": "skipped",
+      "parcels": 5617,
+      "permits": 0,
+      "roofingPermits": 0,
+      "reason": "too_slow: parcel-by-parcel portal search exceeds the ~2 h unattended skip rule (architecture §3.7).",
+      "estimate": {
+        "size": "1–3 GB of captures per large city",
+        "time": "20–80 h per large city at concurrency 1"
+      },
+      "kitStatus": "supported"
+    }
+  ]
+}

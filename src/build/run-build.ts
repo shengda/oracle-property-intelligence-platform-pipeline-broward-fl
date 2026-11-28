@@ -345,7 +345,10 @@ export async function build(opts: {
     };
     const meta = path.join(dir, "meta");
     await writeFile(path.join(meta, "coverage.json"), `${JSON.stringify(coverage, null, 2)}\n`);
-    await writeFile(path.join(meta, "sources.json"), `${JSON.stringify(sourcesFile, null, 2)}\n`);
+    await writeFile(
+      path.join(meta, "sources.json"),
+      `${JSON.stringify(publishableSources(sourcesFile), null, 2)}\n`,
+    );
     await writeFile(
       path.join(meta, "deltas.json"),
       `${JSON.stringify({ schema: "oracle.deltas.v1", run_id: runId, previous_run_id: previous, groups: deltas }, null, 2)}\n`,
@@ -362,4 +365,21 @@ export async function build(opts: {
   } finally {
     await db.close();
   }
+}
+
+/**
+ * The run's copy of sources.json is published, so local raw-capture paths are written relative to
+ * the repository (an absolute path would put the operator's home folder on IPFS).
+ */
+export function publishableSources<T extends { sources: Record<string, { rawPath?: string }> }>(
+  file: T,
+  root = REPO_ROOT,
+): T {
+  const sources = Object.fromEntries(
+    Object.entries(file.sources).map(([k, v]) => [
+      k,
+      v.rawPath && path.isAbsolute(v.rawPath) ? { ...v, rawPath: path.relative(root, v.rawPath) } : v,
+    ]),
+  );
+  return { ...file, sources };
 }

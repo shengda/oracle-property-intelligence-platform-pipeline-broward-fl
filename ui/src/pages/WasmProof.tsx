@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ErrorBox, Section, Table } from "../components/ui.tsx";
 import { api, qs, useApi } from "../lib/api.ts";
 import { GATEWAYS } from "../lib/format.ts";
@@ -20,14 +20,17 @@ function proofSql(url: string, lat: number, lon: number, miles: number, minAge: 
 export function WasmProof() {
   const health = useApi<any>("/api/health");
   const manifest = useApi<any>("/api/manifest/current");
-  const [url, setUrl] = useState(`${window.location.origin}/files/query/v_property.parquet`);
+  // Typed by the user; otherwise the published Parquet by CID, or the server's copy (local runs).
+  const [typedUrl, setUrl] = useState<string | null>(null);
   // A published run reads the Parquet by CID from a public gateway (CORS + range reads verified).
   const publishedCid: string | null =
     manifest.data?.published &&
     manifest.data.files?.find((f: any) => f.name === "query/v_property.parquet")?.cid;
-  useEffect(() => {
-    if (publishedCid) setUrl(`${GATEWAYS[0]}/ipfs/${publishedCid}`);
-  }, [publishedCid]);
+  const url =
+    typedUrl ??
+    (publishedCid
+      ? `${GATEWAYS[0]}/ipfs/${publishedCid}`
+      : `${window.location.origin}/files/query/v_property.parquet`);
   const [state, setState] = useState<any>(null);
   const [error, setError] = useState<Error | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,18 +42,15 @@ export function WasmProof() {
     try {
       const t0 = performance.now();
       const duckdb = await import("@duckdb/duckdb-wasm");
-      const bundles = {
-        mvp: {
-          mainModule: (await import("@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url")).default,
-          mainWorker: (await import("@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url")).default,
-        },
-        eh: {
-          mainModule: (await import("@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url")).default,
-          mainWorker: (await import("@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url")).default,
-        },
-      };
-      const bundle = await duckdb.selectBundle(bundles);
-      const worker = new Worker(bundle.mainWorker!);
+      // The engine comes from jsDelivr at the installed package version: the WASM files (36–41 MB)
+      // are far over the 6 MB a Lambda Function URL can return, so the Oracle cannot serve them.
+      const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+      // A cross-origin worker script must be started from a same-origin Blob.
+      const workerUrl = URL.createObjectURL(
+        new Blob([`importScripts("${bundle.mainWorker!}");`], { type: "text/javascript" }),
+      );
+      const worker = new Worker(workerUrl);
+      URL.revokeObjectURL(workerUrl);
       const db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
       await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
       const conn = await db.connect();
@@ -117,7 +117,7 @@ export function WasmProof() {
             onChange={(e) => setUrl(e.target.value)}
             aria-label="Parquet URL"
           />
-          <button onClick={run} disabled={busy} data-testid="wasm-run">
+          <button onClick={run} disabled={busy || manifest.loading} data-testid="wasm-run">
             {busy ? "Running in the browser…" : "Run in browser"}
           </button>
         </div>

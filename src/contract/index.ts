@@ -65,10 +65,11 @@ export const AgedRoofsQuery = z.object({
   minRoofAgeYears: z.number().int().min(0).default(DEFAULTS.roofAgeYears),
   limit: z.number().int().positive().max(5000).default(DEFAULTS.limit),
   /**
-   * `oldest` (default): oldest roofs first. `nearest`: closest to the center first, so a capped
-   * list still covers the area and a lower threshold brings in younger roofs (CRM map layer).
+   * `oldest` (default): oldest roofs first. `nearest`: closest to the center first. `spread`: the
+   * oldest roofs of each part of the circle in turn, so a capped list still covers the whole radius
+   * (the CRM map layer).
    */
-  order: z.enum(["oldest", "nearest"]).default("oldest"),
+  order: z.enum(["oldest", "nearest", "spread"]).default("oldest"),
 });
 
 export const OpenRoofPermitsQuery = z.object({

@@ -3,7 +3,7 @@ import { createReadStream, existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { CarReader } from "@ipld/car";
-import { COUNTY } from "../config.ts";
+import { COUNTY, REPO_ROOT } from "../config.ts";
 import type { ElephantCli } from "../elephant/cli.ts";
 import { groupContext } from "../lexicon/output-writer.ts";
 import { loadLexiconManifest } from "../lexicon/manifest.ts";
@@ -281,7 +281,8 @@ export async function publishRun(
   let ext: Manifest["extends"] = null;
   if (pi?.seed_source === "atlas") {
     const sources = await readJson<any>(path.join(runDir, "meta", "sources.json"));
-    const raw = sources.sources?.["atlas-county"]?.rawPath;
+    const rel = sources.sources?.["atlas-county"]?.rawPath;
+    const raw = rel ? path.resolve(REPO_ROOT, rel) : undefined;
     const page =
       raw && existsSync(path.join(raw, "page.json"))
         ? await readJson<any>(path.join(raw, "page.json"))

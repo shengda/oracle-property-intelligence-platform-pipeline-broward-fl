@@ -57,6 +57,18 @@ describe("lead queries (fixture)", () => {
     expect(old).toEqual([...old].sort((a, b) => b - a));
   });
 
+  test("order=spread covers the radius: a capped list reaches as far as the full one", async () => {
+    const base = { center: FTL, radiusMiles: 10, minRoofAgeYears: 0 };
+    const all = await Q.findAgedRoofs(db, { ...base, limit: 5000 });
+    const cap = Math.max(2, Math.floor(all.length / 4));
+    const spread = await Q.findAgedRoofs(db, { ...base, order: "spread", limit: cap });
+    const nearest = await Q.findAgedRoofs(db, { ...base, order: "nearest", limit: cap });
+    expect(spread).toHaveLength(cap);
+    const far = (rows: typeof all) => Math.max(...rows.map((r) => r.distance_miles!));
+    expect(far(spread)).toBeGreaterThan(far(nearest));
+    for (const r of spread) expect(C.PropertyLead.parse(r)).toBeTruthy();
+  });
+
   test("open permits carry their property's roof age", async () => {
     const rows = await Q.findOpenRoofPermits(db, { center: FTL, radiusMiles: 10 });
     const linked = rows.filter((r) => r.parcel_identifier);

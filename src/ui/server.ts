@@ -373,7 +373,7 @@ export async function startUiServer(
       radiusMiles: opt(q.radiusMiles, qNum) ?? C.DEFAULTS.radiusMiles,
       minRoofAgeYears: opt(q.minRoofAgeYears, qInt),
       limit: opt(q.limit, qInt),
-      order: q.order === "nearest" ? "nearest" : undefined,
+      order: q.order === "nearest" || q.order === "spread" ? q.order : undefined,
     });
     const [rows, total, uncovered] = await Promise.all([
       Q.findAgedRoofs(db, input),

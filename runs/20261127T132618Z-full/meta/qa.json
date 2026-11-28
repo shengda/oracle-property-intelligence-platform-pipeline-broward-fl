@@ -1,0 +1,403 @@
+{
+  "schema": "oracle.qa.v1",
+  "run_id": "20261127T132618Z-full",
+  "generated_at": "2026-11-27T21:33:24.076Z",
+  "status": "warn",
+  "counts": {
+    "pass": 18,
+    "warn": 4,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "id": "property_count_vs_roll",
+      "group": "coverage_scale",
+      "title": "County properties vs distinct valid folios in the BCPA roll",
+      "value": {
+        "properties": 766044,
+        "roll_parcels": 766044,
+        "roll_rows": 1335746,
+        "diff_pct": 0
+      },
+      "threshold": "pass ≤ 0.5 % difference, warn ≤ 2 %, else fail",
+      "status": "pass",
+      "detail": "569702 roll rows merged (polygon parts sharing one folio) or skipped (invalid id)."
+    },
+    {
+      "id": "invalid_parcel_ids",
+      "group": "coverage_scale",
+      "title": "Roll rows without a valid 12-character folio (skipped, reason invalid_parcel_id)",
+      "value": 2,
+      "threshold": "pass ≤ 0.5 % of roll rows, warn ≤ 2 %",
+      "status": "pass"
+    },
+    {
+      "id": "duplicate_parcel_keys",
+      "group": "duplicates_reconciliation",
+      "title": "Duplicate parcel_identifier in the county group",
+      "value": 0,
+      "threshold": "0",
+      "status": "pass"
+    },
+    {
+      "id": "duplicate_permit_keys",
+      "group": "duplicates_reconciliation",
+      "title": "Duplicate permit keys after source reconciliation",
+      "value": 0,
+      "threshold": "0",
+      "status": "pass"
+    },
+    {
+      "id": "duplicate_property_improvements",
+      "group": "duplicates_reconciliation",
+      "title": "Permits published more than once in property_improvement",
+      "value": 0,
+      "threshold": "0",
+      "status": "pass"
+    },
+    {
+      "id": "company_owner_dedupe",
+      "group": "duplicates_reconciliation",
+      "title": "Company owners: distinct names vs distinct company CIDs (same name + mailing → one CID)",
+      "value": {
+        "names": 53382,
+        "cids": 104164
+      },
+      "threshold": "informational; CIDs ≥ names (same name with different mailing addresses stays distinct)",
+      "status": "pass"
+    },
+    {
+      "id": "geometry_share",
+      "group": "coordinates",
+      "title": "Parcels with a centroid inside the Census county polygon",
+      "value": {
+        "parcel_centroid": 766044,
+        "missing_geometry": 0,
+        "outside_county": 0,
+        "share_pct": 100
+      },
+      "threshold": "pass ≥ 99 %, warn ≥ 95 %",
+      "status": "pass"
+    },
+    {
+      "id": "radius_excludes_missing_geometry",
+      "group": "coordinates",
+      "title": "Properties without usable geometry exposing coordinates",
+      "value": 0,
+      "threshold": "0",
+      "status": "pass"
+    },
+    {
+      "id": "permit_status_distribution",
+      "group": "permits",
+      "title": "Normalized permit status distribution (needs_review never appears in long-open results)",
+      "value": {
+        "completed": 58552,
+        "open": 26287,
+        "other": 6054,
+        "needs_review": 372
+      },
+      "threshold": "needs_review: pass ≤ 2 %, warn ≤ 5 %",
+      "status": "pass"
+    },
+    {
+      "id": "permit_open_days",
+      "group": "permits",
+      "title": "open_days set only for open permits with an issue/application date",
+      "value": {
+        "with_open_days": 26283,
+        "open_without_date": 4,
+        "non_open_with_days": 0,
+        "median_open_days": 2304,
+        "open_5y_plus": 26015
+      },
+      "threshold": "non_open_with_days = 0",
+      "status": "pass"
+    },
+    {
+      "id": "permit_parcel_match_rate",
+      "group": "permits",
+      "title": "Permits linked to a roll parcel by folio, else by a unique street address (unmatched are counted, not published)",
+      "value": {
+        "matched": 81365,
+        "total": 91265,
+        "share_pct": 89.15,
+        "by_method": {
+          "address": 37191,
+          "address_unit": 8409,
+          "folio": 35765,
+          "unmatched": 9570
+        }
+      },
+      "threshold": "pass ≥ 95 %, warn ≥ 85 %",
+      "status": "warn"
+    },
+    {
+      "id": "permit_jurisdiction_coverage",
+      "group": "permits",
+      "title": "Share of parcels in jurisdictions with loaded permit data",
+      "value": {
+        "covered": [
+          "fort-lauderdale",
+          "weston"
+        ],
+        "blocked": 15,
+        "skipped": 15,
+        "parcels_covered_pct": 13.98
+      },
+      "threshold": "warn (documented limitation, architecture §3.7 skip rule), never fail",
+      "status": "warn",
+      "detail": "Municipal portals skipped (too_slow) or blocked; elsewhere roof age falls back to year built and open-permit queries return nothing."
+    },
+    {
+      "id": "permit_group_extends_published_county",
+      "group": "permits",
+      "title": "property_improvement properties carry the Seed of the published Atlas county archive (same property CIDs)",
+      "value": {
+        "seed_source": "atlas",
+        "atlas_county_root": "baguqeerahfw4wnjiumsos6e2i3r2lcmaadfuvi54o7qx75xqx2vei42wpmvq",
+        "properties": 26663,
+        "not_in_published_archive": 0,
+        "left_out": {
+          "parcels": 530,
+          "permits": 3345
+        }
+      },
+      "threshold": "pass: seed_source atlas and 0 property CIDs outside the published archive; else fail",
+      "status": "pass",
+      "detail": "530 permitted parcels (3345 permits) are not in the published county archive and are left out of the group; they stay in the query views."
+    },
+    {
+      "id": "property_cids_published",
+      "group": "identity",
+      "title": "Property CIDs in the views are those of the published county archive",
+      "value": {
+        "property_identity": "atlas",
+        "properties": 766044,
+        "with_published_cid": 749012,
+        "without_cid": 17032
+      },
+      "threshold": "pass: identity atlas (CIDs of the published archive; parcels it lacks get none); warn: local identity (CIDs of this run's unpublished county archive)",
+      "status": "pass",
+      "detail": "17032 parcels of this run's roll are not in the published county archive; their property_cid is null."
+    },
+    {
+      "id": "roof_age_basis_mix",
+      "group": "roof_age",
+      "title": "Roof-age basis mix (permit vs year built vs unknown)",
+      "value": {
+        "year_built": 713790,
+        "unknown": 49526,
+        "permit": 2728
+      },
+      "threshold": "unknown: pass ≤ 15 %, warn ≤ 30 %",
+      "status": "pass",
+      "detail": "Unknown = no building on the roll (vacant land, common elements) and no completed roof permit."
+    },
+    {
+      "id": "roof_age_repairs_never_reset",
+      "group": "roof_age",
+      "title": "Roof ages anchored on a repair/coating/accessory permit",
+      "value": 0,
+      "threshold": "0",
+      "status": "pass"
+    },
+    {
+      "id": "contractor_link_rate",
+      "group": "contractor_bbb",
+      "title": "Open Fort Lauderdale roofing permits with a licensed contractor (Accela) resolved to a DBPR record",
+      "value": {
+        "open_roofing_permits": 1589,
+        "with_license_number": 550,
+        "dbpr_resolved": 475,
+        "dbpr_share_pct": 29.89
+      },
+      "threshold": "pass ≥ 60 %, warn ≥ 25 %",
+      "status": "warn"
+    },
+    {
+      "id": "bbb_link_rate",
+      "group": "contractor_bbb",
+      "title": "Contractors with a BBB rating",
+      "value": {
+        "linked": 0,
+        "source_status": "blocked"
+      },
+      "threshold": "warn when the BBB source is blocked (documented); never fail",
+      "status": "warn",
+      "detail": "BBB returned HTTP 403 (http_403) on the first category request; stopped per the kit rule. No BBB ratings in this run; use the official BBB API for scores."
+    },
+    {
+      "id": "occupancy_mix",
+      "group": "occupancy_owner",
+      "title": "Occupancy class mix",
+      "value": {
+        "owner_occupied": 413948,
+        "likely_tenant_occupied": 276070,
+        "commercial": 29220,
+        "government_or_exempt": 19298,
+        "unknown": 17270,
+        "vacant_land": 10238
+      },
+      "threshold": "unknown: pass ≤ 10 %, warn ≤ 25 %",
+      "status": "pass"
+    },
+    {
+      "id": "owner_location_mix",
+      "group": "occupancy_owner",
+      "title": "Owner mailing-location class mix",
+      "value": {
+        "in_county": 616010,
+        "out_of_state": 83624,
+        "in_state_out_of_county": 55698,
+        "unknown": 8782,
+        "foreign": 1930
+      },
+      "threshold": "unknown: pass ≤ 10 %, warn ≤ 25 %",
+      "status": "pass"
+    },
+    {
+      "id": "pii_owner_names",
+      "group": "pii",
+      "title": "Individual owner names in published columns (Open Q3 default: none)",
+      "value": {
+        "person_entities_in_county_group": 0,
+        "probed_person_owner_names": 5000,
+        "matches": 0
+      },
+      "threshold": "0 person entities and 0 matches",
+      "status": "pass",
+      "detail": "Counts only; matched values are never written to this report."
+    },
+    {
+      "id": "semantic_search_smoke",
+      "group": "index",
+      "title": "Semantic search finds re-roof permits for 'replace roof shingles'",
+      "value": "top hit: Re-Roof — REMOVE AND REPLACE EXISTING SHINGLE ROOF REMOVE AND REPLACE EXISTING SHINGLE ROOF",
+      "threshold": "a roofing permit in the top 5",
+      "status": "pass"
+    }
+  ],
+  "spot_check": [
+    {
+      "parcel_identifier": "484105090010",
+      "address": "11000 HOLMBERG RD, PARKLAND, FL 33076",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='484105090010'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484105090010"
+    },
+    {
+      "parcel_identifier": "504202BH0060",
+      "address": "101 NE 14 AVE #6, FORT LAUDERDALE, FL 33301",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='504202BH0060'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=504202BH0060"
+    },
+    {
+      "parcel_identifier": "494127BA0290",
+      "address": "3050 SUNRISE LAKES DR E #205, SUNRISE, FL 33322",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='494127BA0290'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494127BA0290"
+    },
+    {
+      "parcel_identifier": "504135300120",
+      "address": "SW 61 AVE, DAVIE, FL 33314",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='504135300120'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=504135300120"
+    },
+    {
+      "parcel_identifier": "484122GN0490",
+      "address": "2851 RIVERSIDE DR #301-N, CORAL SPRINGS, FL 33065",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='484122GN0490'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484122GN0490"
+    },
+    {
+      "parcel_identifier": "494102AE0100",
+      "address": "708 SW 81 AVE #5B, NORTH LAUDERDALE, FL 33068",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='494102AE0100'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494102AE0100"
+    },
+    {
+      "parcel_identifier": "484305AF2770",
+      "address": "1523 E HILLSBORO BLVD #834, DEERFIELD BEACH, FL 33441",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='484305AF2770'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484305AF2770"
+    },
+    {
+      "parcel_identifier": "494234060111",
+      "address": "800 NE 17 AVE, FORT LAUDERDALE, FL 33304",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494234060111'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494234060111"
+    },
+    {
+      "parcel_identifier": "504205130780",
+      "address": "313 NW 28 TER, BROWARD COUNTY, FL 33311",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='504205130780'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=504205130780"
+    },
+    {
+      "parcel_identifier": "514126200220",
+      "address": "6772 SW 34 CT, MIRAMAR, FL 33023",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='514126200220'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=514126200220"
+    },
+    {
+      "parcel_identifier": "484116110150",
+      "address": "4405 NW 100 AVE, CORAL SPRINGS, FL 33065",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='484116110150'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484116110150"
+    },
+    {
+      "parcel_identifier": "484307020530",
+      "address": "1929 NE 48 CT, POMPANO BEACH, FL 33064",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='484307020530'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484307020530"
+    },
+    {
+      "parcel_identifier": "484231AF1540",
+      "address": "651 LYONS RD #10202, COCONUT CREEK, FL 33063",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/QAlertBCPA_Parcel_TaxRoll/FeatureServer/3/query?where=FOLIO='484231AF1540'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=484231AF1540"
+    },
+    {
+      "parcel_identifier": "494228010320",
+      "address": "NW 20 AVE, OAKLAND PARK, FL 33311",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494228010320'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494228010320"
+    },
+    {
+      "parcel_identifier": "494103161000",
+      "address": "8115 NW 67 AVE, TAMARAC, FL 33321",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494103161000'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494103161000"
+    },
+    {
+      "parcel_identifier": "514029040930",
+      "address": "3655 SW 163 AVE, MIRAMAR, FL 33027",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='514029040930'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=514029040930"
+    },
+    {
+      "parcel_identifier": "494234034940",
+      "address": "1239 NW 5 AVE #1-2, FORT LAUDERDALE, FL 33311",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494234034940'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494234034940"
+    },
+    {
+      "parcel_identifier": "494013050141",
+      "address": "4257 NW 120 LN, SUNRISE, FL 33323",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494013050141'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494013050141"
+    },
+    {
+      "parcel_identifier": "494215030760",
+      "address": "261 NE 48 CT, OAKLAND PARK, FL 33334",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='494215030760'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=494215030760"
+    },
+    {
+      "parcel_identifier": "504105091550",
+      "address": "9244 CHELSEA DR N, PLANTATION, FL 33324",
+      "source_url": "https://services.arcgis.com/JMAJrTsHNLrSsWf5/arcgis/rest/services/PARCEL_POLY_BCPA_TAXROLL/FeatureServer/0/query?where=FOLIO='504105091550'&outFields=*&f=json",
+      "appraiser_url": "https://web.bcpa.net/BcpaClient/#/Record-Search?folio=504105091550"
+    }
+  ]
+}

@@ -283,6 +283,7 @@ regardless and never bypassed.
 | Vercel AI SDK for every LLM call | Followed (M2); ESLint bans `@anthropic-ai/sdk` | — |
 | Vitest + GitHub Actions; Prettier/ESLint; `tsc` | Followed | — |
 | PagerDuty for critical failures | CloudWatch alarms (errors, 5xx, agent budget) and AWS Budgets → SNS email (M5) | No on-call rotation |
+| Restate durable workflows with scoped per-source queues (`durable-workflow-builder`, `county-ingest-run`) | Plain resumable CLI jobs (`oracle ingest` / `build` / `publish`): bulk downloads, then a bounded, checkpointed Accela lookup with one fixed per-source rate | Every source here is a bulk file or ArcGIS layer, not a per-parcel portal crawl. The one per-record source (Fort Lauderdale Accela detail) is a few thousand requests at a fixed rate with a checkpoint per permit, so a single throttled loop is the whole fan-out. Restate earns its place at per-parcel scale (the next county's appraiser crawl) |
 | Queued boundaries for external dependencies | Bounded, resumable source jobs on the operator machine (Accela lookup checkpoints per permit) | Batch, not a service |
 | Atlas only; no county pointer (`use-oracle`) | No county IPNS; per-run manifests by CID (M3) | README acceptance criteria |
 | Do not publish coverage objects | `meta/coverage.json` published (M3) | README requires coverage |
