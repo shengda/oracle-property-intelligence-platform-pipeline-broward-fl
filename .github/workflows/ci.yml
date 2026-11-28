@@ -6,6 +6,10 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      # onnxruntime-node's install script downloads a CUDA build on Linux (404 for 1.21.0);
+      # CI has no GPU and the CPU build ships in the package.
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:
       - uses: actions/checkout@v4
         with:
