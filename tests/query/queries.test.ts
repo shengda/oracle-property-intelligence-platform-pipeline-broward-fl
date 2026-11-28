@@ -69,6 +69,19 @@ describe("lead queries (fixture)", () => {
     for (const r of spread) expect(C.PropertyLead.parse(r)).toBeTruthy();
   });
 
+  test("open permits filter on roof age; the count covers every match", async () => {
+    const base = { center: FTL, radiusMiles: 10 };
+    const all = await Q.findOpenRoofPermits(db, base);
+    const ages = all.map((r) => r.roof_age_years).filter((a): a is number => a != null);
+    expect(ages.length).toBeGreaterThan(0);
+    const min = Math.max(...ages);
+    const rows = await Q.findOpenRoofPermits(db, { ...base, minRoofAgeYears: min });
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) expect(r.roof_age_years).toBeGreaterThanOrEqual(min);
+    expect(await Q.countOpenRoofPermits(db, { ...base, minRoofAgeYears: min })).toBe(rows.length);
+    expect(await Q.countOpenRoofPermits(db, base)).toBe(all.length);
+  });
+
   test("open permits carry their property's roof age", async () => {
     const rows = await Q.findOpenRoofPermits(db, { center: FTL, radiusMiles: 10 });
     const linked = rows.filter((r) => r.parcel_identifier);

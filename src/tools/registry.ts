@@ -143,7 +143,7 @@ const tools = [
     name: "find_open_roof_permits",
     title: "Find open roof permits",
     description:
-      "Open roofing permits within radiusMiles of (lat, lon), longest open first, with open duration (open_days, open_years), contractor name and license, and BBB fields (null when no BBB rating is published). Permits with ambiguous dates or status (needs_review) are never included.",
+      "Open roofing permits within radiusMiles of (lat, lon), longest open first, with open duration (open_days, open_years), contractor name and license, BBB fields (null when no BBB rating is published), and the property's roof age (roof_age_years, roof_age_basis); minRoofAgeYears filters on it. Permits with ambiguous dates or status (needs_review) are never included.",
     inputSchema: z.object({
       lat,
       lon,
@@ -153,6 +153,14 @@ const tools = [
         .min(0)
         .default(0)
         .describe("Only permits open at least this many years (default 0)"),
+      minRoofAgeYears: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          "Only permits on properties whose roof is at least this many years old (each row carries roof_age_years). Use it for questions that combine permit age and roof age; counts then cover every match, not just the rows returned.",
+        ),
       limit,
     }),
     async handler(db, i) {
@@ -160,6 +168,7 @@ const tools = [
         center: { lat: i.lat, lon: i.lon },
         radiusMiles: i.radiusMiles,
         minOpenYears: i.minOpenYears,
+        minRoofAgeYears: i.minRoofAgeYears,
         limit: i.limit,
       };
       const [rows, total] = await Promise.all([Q.findOpenRoofPermits(db, q), Q.countOpenRoofPermits(db, q)]);

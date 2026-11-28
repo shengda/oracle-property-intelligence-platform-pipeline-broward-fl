@@ -76,6 +76,8 @@ export const OpenRoofPermitsQuery = z.object({
   center: LatLon,
   radiusMiles: z.number().positive().max(50),
   minOpenYears: z.number().min(0).default(0),
+  /** Only permits on a property whose roof is at least this old (permits with no roof age drop out). */
+  minRoofAgeYears: z.number().int().min(0).optional(),
   limit: z.number().int().positive().max(5000).default(DEFAULTS.limit),
 });
 

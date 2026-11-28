@@ -393,6 +393,7 @@ export async function startUiServer(
       center: centerFrom(q),
       radiusMiles: opt(q.radiusMiles, qNum) ?? C.DEFAULTS.radiusMiles,
       minOpenYears: opt(q.minOpenYears, qNum),
+      minRoofAgeYears: opt(q.minRoofAgeYears, qInt),
       limit: opt(q.limit, qInt),
     });
     const [rows, total, uncovered] = await Promise.all([

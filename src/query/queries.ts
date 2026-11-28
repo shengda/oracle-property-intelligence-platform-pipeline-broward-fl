@@ -126,6 +126,14 @@ export async function findAgedRoofs(db: SnapshotDb, input: unknown): Promise<Pro
 /** Grid cells per side for `order: "spread"` (about 300 cells fall inside the circle). */
 const SPREAD_CELLS = 20;
 
+/** The property join and filter for open permits with `minRoofAgeYears` (count query only joins when needed). */
+function roofAgeJoin(min: number | undefined): string {
+  return min === undefined ? "" : "left join v_property pr on pr.parcel_identifier = r.parcel_identifier";
+}
+function roofAgeWhere(min: number | undefined): string {
+  return min === undefined ? "" : `and pr.roof_age_years >= ${num(min)}`;
+}
+
 /** Number of properties matching an aged-roofs query (ignores `limit`). */
 export async function countAgedRoofs(db: SnapshotDb, input: unknown): Promise<number> {
   const q = AgedRoofsQuery.parse(input);
@@ -140,9 +148,9 @@ export async function countAgedRoofs(db: SnapshotDb, input: unknown): Promise<nu
 export async function countOpenRoofPermits(db: SnapshotDb, input: unknown): Promise<number> {
   const q = OpenRoofPermitsQuery.parse(input);
   const r = await db.one<{ n: number }>(
-    `select count(*)::INTEGER n from v_roof_permit r
+    `select count(*)::INTEGER n from v_roof_permit r ${roofAgeJoin(q.minRoofAgeYears)}
      where r.status = 'open' and r.open_days is not null and r.open_days >= ${Math.round(q.minOpenYears * 365.25)}
-       and ${radiusSql(q.center, q.radiusMiles, "r")}`,
+       and ${radiusSql(q.center, q.radiusMiles, "r")} ${roofAgeWhere(q.minRoofAgeYears)}`,
   );
   return r?.n ?? 0;
 }
@@ -156,7 +164,7 @@ export async function findOpenRoofPermits(db: SnapshotDb, input: unknown): Promi
        pr.roof_age_years, pr.roof_age_basis
      from v_roof_permit r left join v_property pr on pr.parcel_identifier = r.parcel_identifier
      where r.status = 'open' and r.open_days is not null and r.open_days >= ${minDays}
-       and ${radiusSql(q.center, q.radiusMiles, "r")}
+       and ${radiusSql(q.center, q.radiusMiles, "r")} ${roofAgeWhere(q.minRoofAgeYears)}
      order by r.open_days desc, r.permit_key limit ${lim(q.limit)}`,
   );
   return rows.map((r) => permitLead(db, r));
