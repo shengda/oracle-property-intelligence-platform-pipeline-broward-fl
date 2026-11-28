@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { budgetFromEnv } from "../../src/agent/budget.ts";
+import { budgetFromEnv, createBudgetGuard } from "../../src/agent/budget.ts";
 import { envPositiveNumber } from "../../src/util/env.ts";
 
 test("unset or empty settings fall back to the default; set ones are used", () => {
@@ -17,6 +17,6 @@ test("a zero, negative or non-numeric setting is a configuration error naming th
 
 test("a .env with the optional agent lines left empty gets the default budget, not zero", () => {
   const guard = budgetFromEnv({ ORACLE_AGENT_DAILY_TOKENS: "", ORACLE_AGENT_PER_IP_PER_MINUTE: "" });
-  expect(guard.status().limit).toBe(3_000_000);
+  expect((guard as ReturnType<typeof createBudgetGuard>).status().limit).toBe(3_000_000);
   expect(guard.check("1.2.3.4")).toBeNull();
 });

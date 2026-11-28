@@ -1,0 +1,9 @@
+{
+  "manifestCid": "bafkreiaw4jf6xzwtgpcfadnu7vbwpwpshbv7qz2hflapksf5m4rzl4dsby",
+  "anthropicKeyParam": "/roofing/anthropic-key",
+  "agentModel": "claude-sonnet-5-5",
+  "agentDailyTokens": 500000,
+  "agentPerIpPerMinute": 6,
+  "memoryMb": 3008,
+  "monthlyBudgetUsd": 5
+}

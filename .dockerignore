@@ -1,0 +1,15 @@
+# Only what the image needs; everything else (runs/, work/, raw caches, CARs, .env) stays out.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!src/
+!ui/
+!scripts/install-duckdb-extensions.mjs
+!cache/models/
+!cache/published/
+ui/dist/
+ui/node_modules/
+**/*.test.ts
+**/.env*

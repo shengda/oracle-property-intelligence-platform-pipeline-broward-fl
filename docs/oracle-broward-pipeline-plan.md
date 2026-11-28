@@ -11,13 +11,13 @@
 4. writes a manifest (chained by `previous_manifest_cid`; no county IPNS) and run history;
 5. verifies retrieval on two public gateways.
 
-One Lambda container image (CDK, AWS Lambda Web Adapter, published index baked in) serves the explorer UI, an agent endpoint (Vercel AI SDK + the same query tools) and a stateless MCP server over HTTP, behind a Function URL and CloudFront.
+One Lambda container image (CDK, AWS Lambda Web Adapter, published index baked in) serves the explorer UI, an agent endpoint (Vercel AI SDK + the same query tools) and a stateless MCP server over HTTP, on a public Lambda Function URL (HTTPS).
 
 **Tech Stack:**
 - Runtime and data: Node ≥ 22.18, TypeScript, Elephant CLI 2 (pinned build ≥ `94db3af`), kubo (`ipfs` CLI), `@duckdb/node-api` (+ `spatial`, `fts`, `vss`, `httpfs`), transformers.js (`@huggingface/transformers`, local sentence embeddings), `@ipld/car` + `multiformats`.
 - Interfaces: `@modelcontextprotocol/sdk` (stdio + stateless Streamable HTTP), Vercel AI SDK (`ai`, `@ai-sdk/anthropic`), `zod`, `commander`, Fastify + React/Vite/MapLibre, `@duckdb/duckdb-wasm` (proof page).
 - Quality: `vitest`, Playwright, Prettier + ESLint, GitHub Actions CI.
-- AWS (`us-east-2`, tagged `project_name`): CDK (`aws-cdk-lib`); Lambda container image + AWS Lambda Web Adapter; CloudFront; SSM Parameter Store; EventBridge; AWS Budgets; Powertools for AWS Lambda (TypeScript); Docker for the image build only.
+- AWS (`us-east-2`, tagged `project_name`): CDK (`aws-cdk-lib`); Lambda container image + AWS Lambda Web Adapter; Function URL; SSM Parameter Store; EventBridge; AWS Budgets; Powertools for AWS Lambda (TypeScript); Docker for the image build only.
 - Kit: team-kit runtime `@soofi-xyz-team-kit/oracle-runtime` (read-only git submodule).
 
 **Spec:** [`../README.md`](../README.md) · Architecture: [`roofing-oracle-architecture-and-roadmap.md`](./roofing-oracle-architecture-and-roadmap.md) (decisions, §0 grading, §0.1 kit deviations)
@@ -108,7 +108,7 @@ Investigation task (no product code). Produces the facts later tasks depend on.
   Decide whether the county-wide `county` group fits M1's time box. Compare the total published size per run, and across 3 runs given CID reuse, with the free pin quotas of both providers.
 - [ ] **Step 8b: AWS hosting check.**
   - Choose the AWS account; run `cdk bootstrap` in `us-east-2`.
-  - Deploy a hello-world Lambda container image (Fastify + AWS Lambda Web Adapter) with a Function URL and CloudFront, through CDK, tagged `project_name`. Include a dummy 2 GB file baked into the image.
+  - Deploy a hello-world Lambda container image (Fastify + AWS Lambda Web Adapter) with a Function URL, through CDK, tagged `project_name`. Include a dummy 2 GB file baked into the image.
   - Record cold-start time, the account's Lambda memory quota (request an increase to 10 GB if needed), the image size, and the cost of an idle month.
   - Create the AWS Budgets alarm.
   - If no AWS account is available, fall back to Hugging Face Spaces Docker: record its limits and sleep behaviour, and log the deviation in `DECISIONS.md`.
@@ -714,7 +714,8 @@ Load `apply-engineering-guidelines` (`cloud-aws-primary`, `observability-logging
 - Consumes: `syncRun`, `startUiServer`, `mountMcpHttp`, agent endpoint.
 - Produces `OracleStack` (CDK, `env: { region: "us-east-2" }`, `tags: { project_name: "oracle-broward" }`):
   - `DockerImageFunction`: memory per the Task 0 measurement (target 3–10 GB), timeout 60 s, env `ORACLE_MANIFEST_CID`, `ORACLE_AGENT_MODEL`, `AGENT_DAILY_TOKEN_BUDGET`, `RATE_LIMIT_PER_MINUTE`, `ANTHROPIC_KEY_PARAM`.
-  - Function URL (`authType: NONE`) with a CloudFront distribution in front (HTTPS; caches static assets and GET `/api/query/*`; never caches `/mcp` or `/api/agent`).
+  - Function URL (`authType: NONE`, HTTPS). No CloudFront: the warm ping covers cold starts and there is nothing to cache safely in front of `/mcp` or `/api/agent`.
+  - DynamoDB table (on-demand, TTL) for the agent's daily token count, shared by every Lambda instance.
   - SSM SecureString parameter read at cold start.
   - EventBridge rule pinging `/api/health` every 5 minutes (warm).
   - CloudWatch alarm on 5xx/errors → SNS email (documented replacement for PagerDuty).
@@ -726,13 +727,13 @@ Load `apply-engineering-guidelines` (`cloud-aws-primary`, `observability-logging
 ```ts
 test("image built with ORACLE_FIXTURE=1 answers /api/health, /mcp and /api/query/aged-roofs", …);
 test("stack: one DockerImageFunction in us-east-2 tagged project_name, Function URL auth NONE", …);
-test("stack: CloudFront does not cache /mcp or /api/agent", …);
+test("stack: the agent's daily budget lives in a DynamoDB table with TTL", …);
 test("stack: Anthropic key comes from an SSM parameter, never a plain env value", …);
 test("stack: budget alarm, error alarm and agent budget-use alarm exist", …);
 ```
 - [ ] **Step 2:** Run `npx vitest run tests/deploy infra/test` → FAIL.
 - [ ] **Step 3:** Implement the Dockerfile, fetch script and CDK stack; put the key in SSM (`aws ssm put-parameter --type SecureString`, never committed); `cdk deploy`; enable the uptime workflow.
-- [ ] **Step 4:** Run → PASS. Open the CloudFront URL in a clean browser: the health page shows the manifest CID, and the explorer, agent and `/mcp` work. Record cold-start time, memory and idle monthly cost in `deploy/README.md`.
+- [ ] **Step 4:** Run → PASS. Open the Function URL in a clean browser: the health page shows the manifest CID, and the explorer, agent and `/mcp` work. Record cold-start time, memory and idle monthly cost in `deploy/README.md`.
 - [ ] **Step 5:** Commit `feat: hosted Oracle on AWS Lambda via CDK`. **Milestone M5** when this runs on the latest published manifest. Then open the **draft PR** (fork → designated repo; outward-facing, confirm with the user first) and run a Slowking gate check against it and the hosted URL.
 
 ### Task 18: Full runs, demo packet, documentation
@@ -745,7 +746,7 @@ test("stack: budget alarm, error alarm and agent budget-use alarm exist", …);
 - [ ] **Step 2:** `oracle verify` each manifest from a clean machine/network; save reports. Run `oracle sync --rebuild` on the latest manifest and confirm it matches the published index (Review Focus 6).
 - [ ] **Step 3:** Redeploy the hosted Oracle (T17) on the latest manifest; confirm Runs shows all runs, both manifest CIDs and that old CIDs still fetch.
 - [ ] **Step 4:** Attach each run's group CARs and `tables.car` files to a GitHub release; record CAR CIDs + links in `demo-packet/README.md`.
-- [ ] **Step 5:** Write `COST.md` (pin usage vs quotas on both providers; AWS idle cost from the bill/Cost Explorer: Lambda, CloudFront, ECR storage; agent budget; zero standing Oracle service) and `DEMO.md` mirroring the README demo transcript on the **hosted URL**. Update `DECISIONS.md` kit-deviation table.
+- [ ] **Step 5:** Write `COST.md` (pin usage vs quotas on both providers; AWS idle cost from the bill/Cost Explorer: Lambda, ECR storage, DynamoDB; agent budget; zero standing Oracle service) and `DEMO.md` mirroring the README demo transcript on the **hosted URL**. Update `DECISIONS.md` kit-deviation table.
 - [ ] **Step 6:** Check `git status` shows no Parquet/CAR/secrets outside `fixtures/elephant-mini/`; commit `docs/ demo-packet/ README.md` with message `docs: demo packet, sources, cost and demo script`.
 
 ### Task 19: Submission — demo video, PR, Slowking self-check
@@ -755,7 +756,7 @@ test("stack: budget alarm, error alarm and agent budget-use alarm exist", …);
 
 - [ ] **Step 1:** Record the demo video on the hosted URL following the README demo transcript step by step: run summary → sources → data quality → DuckDB/cost (incl. the WASM proof page) → manifest → two-gateway fetch ("Verify now") → incremental new CID ("Check previous run") → explorer radius queries → occupancy view → agent prompts incl. the "near that area" follow-up, with retrieved evidence expanded → MCP console calls. Upload it to a link reachable without sign-in.
 - [ ] **Step 2:** Write `docs/SUBMISSION.md` with:
-  - Access: hosted URL (CloudFront), MCP URL + connect command, credentials ("public, read-only"), demo video link.
+  - Access: hosted URL (Function URL), MCP URL + connect command, credentials ("public, read-only"), demo video link.
   - Data: latest manifest CID and previous manifest CIDs, run history, Atlas PR / Elephant MCP evidence if registered.
   - Reproduction: setup/reproduction steps (`oracle sync --manifest <cid>`, `oracle sync --rebuild`, `cdk deploy`), source limitations and permit coverage by jurisdiction; the skip rule and each skipped source with its size and time estimate (mirrored in a README "Speed limitations and source constraints" section).
   - Roles (README demo step "both Oracle and builder"): **as Oracle**, ran the pipeline, publishes from my own pinning accounts (Filebase + second pinner), owns run history and the on-demand incremental runs, and opened the Atlas PR if granted; **as builder**, wrote the pipeline, query layer, MCP server, UI, agent and infrastructure. The Runs page footer shows the same.

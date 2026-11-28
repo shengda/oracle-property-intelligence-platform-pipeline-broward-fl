@@ -56,8 +56,8 @@ the CRM consumes. Relative links assume the sibling-clone layout in Decision 1.
    hosted URL it can use in a browser. Everything scales to zero: nothing costs money while idle,
    and the grader can never land on a "sleeping" page.
    - Oracle: one Lambda container image (the Fastify app via the AWS Lambda Web Adapter, with
-     `index.duckdb` and the DuckDB extensions baked into the image) behind a Lambda Function URL
-     and CloudFront.
+     `index.duckdb` and the DuckDB extensions baked into the image) on a public Lambda Function
+     URL (HTTPS by default; no CloudFront, see `docs/DECISIONS.md` § M5).
    - CRM: `apps/web` on Amplify, `apps/api` tRPC on Lambda behind API Gateway, the agent on a
      Lambda Function URL (avoids the 29 s API Gateway limit), leads in DynamoDB (on-demand).
    - Secrets in SSM Parameter Store (SecureString); an AWS Budgets alarm caps surprise spend;
@@ -93,7 +93,7 @@ the CRM consumes. Relative links assume the sibling-clone layout in Decision 1.
 | Gate | Requirement | Our answer |
 |---|---|---|
 | PR | PR to the **designated assignment repo**; the PR is the system of record | One PR per repo, from the `shengda` fork to the designated repo; description links everything below (Open Q8) |
-| Runtime (absolute) | **Candidate-deployed hosted URL**, exercised in a Playwright browser without building or running anything. `localhost`, "clone and run", local Docker, tunnels ⇒ 0 | Hosted Oracle (CloudFront → Lambda) + hosted CRM (Amplify + Lambda), HTTPS, public |
+| Runtime (absolute) | **Candidate-deployed hosted URL**, exercised in a Playwright browser without building or running anything. `localhost`, "clone and run", local Docker, tunnels ⇒ 0 | Hosted Oracle (Function URL → Lambda) + hosted CRM (Amplify + Lambda), HTTPS, public |
 | Credentials | Working credentials in the PR, or public runtime | Public read-only Oracle; public CRM with a per-browser demo workspace (no login) |
 | Demo | Demo artifact reachable from the PR | One demo video per product following its README demo transcript |
 
@@ -179,7 +179,7 @@ observable in the hosted UI):
    Filebase + 2nd provider ──► public IPFS ◄── ipfs.io / dweb.link (grader can fetch)
                │ manifest CID (+ Atlas county page if granted)
                ▼
-┌──────── HOSTED ORACLE (AWS CDK: CloudFront → Lambda container image; public, read-only) ──┐
+┌──────── HOSTED ORACLE (AWS CDK: Function URL → Lambda container image; public, read-only) ─┐
 │ index.duckdb = published query/index.duckdb (sha256-verified, baked into the image)      │
 │  ├── Explorer UI: Runs · Sources · Manifest · Explorer · Property · Occupancy ·          │
 │  │   Business · Contractor · Agent chat · MCP · Cost · WASM proof                        │
@@ -197,7 +197,7 @@ observable in the hosted UI):
 **Cost model.**
 - The pipeline runs on the operator's machine, once per run.
 - Data lives on public IPFS on free pin tiers.
-- Every hosted piece scales to zero (Lambda, Amplify, DynamoDB on-demand, CloudFront within the
+- Every hosted piece scales to zero (Lambda, Amplify, DynamoDB on-demand, within the
   AWS free tiers), so no server runs while idle. That is "no ongoing infrastructure cost by
   default". ECR image storage (cents per month) is the only fixed line; `docs/COST.md` measures it.
 - Anyone can rebuild the hosted Oracle from the manifest CID, or query `query/*.parquet`
@@ -332,8 +332,9 @@ One Lambda container image, deployed by CDK (`DockerImageFunction`, `us-east-2`)
 - the image runs the Fastify app (`oracle serve`) through the AWS Lambda Web Adapter;
 - `index.duckdb` (the published `query/index.duckdb` for the pinned manifest CID) and the DuckDB
   extensions are baked in at image build;
-- it sits behind a Lambda Function URL with CloudFront in front for HTTPS and caching of static
-  assets and GET queries;
+- it is served straight from a Lambda Function URL (HTTPS by default). CloudFront was dropped:
+  the warm ping already avoids cold starts, nothing needs a custom domain, and it would only add
+  cache rules that must never cover `/mcp` or `/api/agent`;
 - a scheduled EventBridge ping keeps it warm.
 
 It serves:
@@ -504,7 +505,7 @@ leaked PII cannot be withdrawn once pinned.
 | **M2** | **Inspect** — Oracle UI, MCP and agent on the local run | Oracle T13 query layer, T14, T15 (incl. the Quality page), T16; `oracle serve --index runs/<run_id>/query/index.duckdb` | Every README query works in the local UI on real county-scale data; the Quality page (`meta/qa.json`, written by `oracle index`) reviewed (counts vs the NAL row count, geometry coverage, permit status and open-duration distributions, roof-age basis mix, contractor/BBB link rates, occupancy and owner-location mix, PII scan of published columns, 20-parcel spot check against the appraiser site); defects fixed by re-running M1 steps; written sign-off in `docs/DATA-QA.md` | 5–6 d |
 | **M3** | **Upload** — publish to the Elephant network | Oracle T11, T12, T20 (if Atlas access is granted) | Run 1 published (Lexicon groups + derived + meta incl. `qa.json`, Filebase + second pinner; `publish` refuses a failed QA check unless `--force`, which is recorded); manifest CIDs fetch and match on ipfs.io and dweb.link; `oracle sync --manifest <cid>` + `--rebuild` reproduce the inspected index; **run 2** (incremental: windowed re-pull of the ArcGIS permit layers and DBPR) publishes a new manifest CID while run 1 still resolves; demo-packet manifests and run history recorded | 2–3 d |
 | **M4** | **Query** — CRM UI on local data | CRM T1–T10 | The CRM runs locally against `oracle serve --manifest <run 2 CID>` (published data, synced and verified) with DynamoDB Local; the full CRM demo transcript passes `e2e/demo.spec.ts` locally, including the grader-like project (no WebGL, no geolocation) | 7–9 d |
-| **M5** | **Deploy** — both UIs to production | Oracle T17, T18, T19; CRM T11, T12 | Oracle (CloudFront → Lambda) and CRM (Amplify + Lambda + DynamoDB) hosted on the latest manifest; **run 3** (on-demand incremental, or a labelled simulated update) published and the hosted apps redeployed on it; Slowking gate check, then full self-check against draft PRs; demo videos; ready PRs; final commits | 4–5 d |
+| **M5** | **Deploy** — both UIs to production | Oracle T17, T18, T19; CRM T11, T12 | Oracle (Function URL → Lambda) and CRM (Amplify + Lambda + DynamoDB) hosted on the latest manifest; **run 3** (on-demand incremental, or a labelled simulated update) published and the hosted apps redeployed on it; Slowking gate check, then full self-check against draft PRs; demo videos; ready PRs; final commits | 4–5 d |
 
 Atlas registration (T20) runs inside M3 if access has arrived, otherwise whenever it arrives
 (post-submission evidence goes in a PR comment).

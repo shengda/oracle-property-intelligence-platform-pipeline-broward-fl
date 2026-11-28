@@ -17,5 +17,6 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": false
   },
-  "include": ["src", "tests", "scripts", "vitest.config.ts", "ui/e2e/server.ts"]
+  "include": ["src", "infra", "tests", "scripts", "vitest.config.ts", "ui/e2e/server.ts"],
+  "exclude": ["infra/cdk.out"]
 }

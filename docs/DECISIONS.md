@@ -243,14 +243,41 @@ regardless and never bypassed.
   because the one permit-derived county field (structure roof date) is served from the run's
   supplement (`qd_structure`, `v_property`). Otherwise the county group is rebuilt.
 
+## M5 — hosting (decided 2026-11-28)
+
+- **One container Lambda on a public Function URL, no CloudFront.** The Function URL is HTTPS by
+  default. CloudFront would add a cache in front of `/mcp` and `/api/agent` (which must never be
+  cached) for no gain: a 5-minute EventBridge ping keeps an instance warm and no custom domain is
+  needed. CloudFront can be put in front later without other changes.
+- **The image serves the published run only.** `cache/published/<manifest cid>/` is synced first
+  (`oracle sync` checks every file's sha256 against the manifest) and copied in; the server opens
+  `index.duckdb` read-only. DuckDB extensions (`fts`, `vss`) and the embedding model are installed
+  at build time, so the read-only Lambda filesystem never downloads anything.
+- **Server bundle, not tsx.** `src/hosted.ts` is bundled with esbuild (dependencies external) to
+  `/app/src/hosted.mjs`, so `REPO_ROOT` resolves to `/app` as in a clone.
+- **Agent key and budget.** The Claude key is read from the SSM SecureString
+  `/roofing/anthropic-key` at cold start (never an env value). The daily token budget is counted in
+  a DynamoDB table (pk `AGENT#<day>`, TTL) shared by every instance; the per-IP limit stays per
+  instance. Client IPs come from the address the Function URL appends to `X-Forwarded-For`
+  (exactly one trusted hop), so they cannot be spoofed to dodge the limit.
+- **Agent model `claude-sonnet-5-5`, 500k tokens a day, 50 s agent timeout** (the Lambda stops at
+  60 s). Settings live in `deploy/hosted.json`; the alarm email is passed at deploy time only.
+- **Index prefetch.** Lambda loads image files lazily, so a fresh instance's first queries waited
+  on `index.duckdb` blocks (a new CRM workspace took ~21 s instead of ~1 s). The server reads the
+  file once in the background right after start.
+- **Agent tool output is compacted for the model** (`compactForModel`): no provenance, URLs, ids or
+  nulls per row, at most 40 rows, totals kept. Citations and map pins still use the full result.
+- **Measured** (first deploy, 3008 MB): cold start ~10 s init (13 s first request), warm requests
+  ~0.3 s, memory ~265 MB, image 1.76 GB.
+
 ## Kit deviations (architecture §0.1, kept current)
 
 | Kit rule (source) | Our choice | Why |
 |---|---|---|
-| AWS + CDK only (`apply-engineering-guidelines`) | Followed in M5 | — |
+| AWS + CDK only (`apply-engineering-guidelines`) | Followed (M5): CDK, `us-east-2`, `project_name` tags, Powertools Logger + Metrics, X-Ray active tracing | — |
 | Vercel AI SDK for every LLM call | Followed (M2); ESLint bans `@anthropic-ai/sdk` | — |
 | Vitest + GitHub Actions; Prettier/ESLint; `tsc` | Followed | — |
-| PagerDuty for critical failures | CloudWatch alarm → email (M5) | No on-call rotation |
+| PagerDuty for critical failures | CloudWatch alarms (errors, 5xx, agent budget) and AWS Budgets → SNS email (M5) | No on-call rotation |
 | Queued boundaries for external dependencies | Bounded, resumable source jobs on the operator machine (Accela lookup checkpoints per permit) | Batch, not a service |
 | Atlas only; no county pointer (`use-oracle`) | No county IPNS; per-run manifests by CID (M3) | README acceptance criteria |
 | Do not publish coverage objects | `meta/coverage.json` published (M3) | README requires coverage |

@@ -1,0 +1,19 @@
+name: uptime
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hosted Oracle answers /api/health on the configured manifest
+        run: |
+          set -euo pipefail
+          url=https://jbahdp5wn5czd3bj2trxjjz6ha0tfyzg.lambda-url.us-east-2.on.aws
+          want=$(jq -r .manifestCid deploy/hosted.json)
+          body=$(curl -sf --max-time 60 "$url/api/health")
+          echo "$body"
+          test "$(echo "$body" | jq -r .manifestCid)" = "$want"
+          test "$(echo "$body" | jq -r .ok)" = true

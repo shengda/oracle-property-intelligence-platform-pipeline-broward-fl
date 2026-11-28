@@ -1,5 +1,8 @@
 # Oracle Property Intelligence Platform Pipeline - Broward County, FL
 
+> **Hosted:** https://jbahdp5wn5czd3bj2trxjjz6ha0tfyzg.lambda-url.us-east-2.on.aws/ (public, read-only) ·
+> MCP: `…/mcp` · health: `…/api/health` · deployment: [`deploy/README.md`](deploy/README.md)
+
 ## Context
 
 This repository is the **data gathering and ingestion pipeline** that supplies the [Roofing CRM & Lead Identification UI](https://github.com/prismteam-ai/roofing-crm). The CRM helps roofing companies explore properties in their service area, identify aging roofs and open roofing permits, and turn those signals into leads. This pipeline story covers collecting, loading, reconciling, and exposing the underlying property and permit datasets; the CRM UI/workflow itself is out of scope here.

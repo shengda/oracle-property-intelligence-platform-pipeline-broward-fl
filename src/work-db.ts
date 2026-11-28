@@ -36,12 +36,26 @@ function normalize(value: unknown): unknown {
   return value;
 }
 
+/**
+ * On a read-only host (the Lambda image) the extensions are installed at build time into
+ * DUCKDB_EXTENSION_DIRECTORY, and spill files go to DUCKDB_TEMP_DIRECTORY (/tmp); both unset locally.
+ */
+function hostedDuckDbSettings(env = process.env): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (env.DUCKDB_EXTENSION_DIRECTORY) {
+    out.extension_directory = env.DUCKDB_EXTENSION_DIRECTORY;
+    out.autoinstall_known_extensions = "false";
+  }
+  if (env.DUCKDB_TEMP_DIRECTORY) out.temp_directory = env.DUCKDB_TEMP_DIRECTORY;
+  return out;
+}
+
 export async function openWorkDb(dbPath: string, opts: { readOnly?: boolean } = {}): Promise<WorkDb> {
   if (dbPath !== ":memory:") await mkdir(path.dirname(dbPath), { recursive: true });
-  const instance = await DuckDBInstance.create(
-    dbPath,
-    opts.readOnly ? { access_mode: "READ_ONLY" } : { threads: "4" },
-  );
+  const instance = await DuckDBInstance.create(dbPath, {
+    ...(opts.readOnly ? { access_mode: "READ_ONLY" } : { threads: "4" }),
+    ...hostedDuckDbSettings(),
+  });
   const conn = await instance.connect();
 
   const all = async <T>(sql: string, params?: DuckDBValue[] | Record<string, DuckDBValue>): Promise<T[]> => {

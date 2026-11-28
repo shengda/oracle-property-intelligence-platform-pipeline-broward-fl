@@ -39,6 +39,13 @@ export interface UiServerOptions {
   staticDir?: string | null;
   mcpRateLimitPerMinute?: number;
   logger?: boolean;
+  /**
+   * Proxy hops to trust for the client IP. Hosted: 1 (the Lambda Web Adapter on 127.0.0.1), so
+   * `req.ip` is the address the Function URL appended to X-Forwarded-For, not a spoofable one.
+   */
+  trustProxy?: number;
+  /** Extra routes and hooks, registered before the server listens (hosted: warm pings, metrics). */
+  configure?: (app: FastifyInstance) => void;
 }
 
 /** Derived/meta files the browser may fetch from a local run (never work stores or CARs). */
@@ -91,7 +98,11 @@ export async function startUiServer(
   opts: UiServerOptions,
 ): Promise<{ app: FastifyInstance; url: string; close(): Promise<void> }> {
   const { db } = opts;
-  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 1_000_000 });
+  const app = Fastify({
+    logger: opts.logger ?? false,
+    bodyLimit: 1_000_000,
+    trustProxy: (_addr: string, hop: number) => hop < (opts.trustProxy ?? 0),
+  });
   const digestCache = new Map<string, string>();
 
   app.setErrorHandler((err: any, _req, reply) => {
@@ -549,6 +560,7 @@ export async function startUiServer(
     );
   }
 
+  opts.configure?.(app);
   const url = await app.listen({ host: opts.host ?? "127.0.0.1", port: opts.port ?? DEFAULT_PORT });
   return { app, url, close: () => app.close() };
 }

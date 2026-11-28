@@ -13,6 +13,7 @@ export default tseslint.config(
       "bin/",
       "fixtures/",
       "cdk.out/",
+      "infra/cdk.out/",
       "ui/dist/",
       "test-results/",
       "playwright-report/",

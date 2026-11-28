@@ -253,14 +253,14 @@ export function createOracleAgent(deps: {
 /** HTTP handler for POST /api/agent: budget, validation, timeout and friendly failures. */
 export function createAgentHandler(agent: OracleAgent, budget: BudgetGuard): AgentHandler {
   return async (body, ip) => {
-    const denied = budget.check(ip);
+    const denied = await budget.check(ip);
     if (denied) return { status: 429, body: { error: denied } };
     const parsed = AgentRequest.safeParse(body);
     if (!parsed.success)
       return { status: 400, body: { error: "invalid request", issues: parsed.error.issues.slice(0, 5) } };
     try {
       const answer = await agent.ask(parsed.data);
-      budget.record(answer.usage.totalTokens);
+      await budget.record(answer.usage.totalTokens);
       return { status: 200, body: answer };
     } catch (err) {
       if (err instanceof AgentTimeoutError)
