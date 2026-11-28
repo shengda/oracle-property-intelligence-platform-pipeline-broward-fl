@@ -1,7 +1,7 @@
 # Decisions — Broward Oracle (M1)
 
 Recorded during Task 0 (readiness) and Milestone 1 (ingest), 2026-11-27. Architecture:
-[`2026-11-25-roofing-oracle-architecture-and-roadmap.md`](./2026-11-25-roofing-oracle-architecture-and-roadmap.md).
+[`roofing-oracle-architecture-and-roadmap.md`](./roofing-oracle-architecture-and-roadmap.md).
 
 ## Repositories and toolchain
 

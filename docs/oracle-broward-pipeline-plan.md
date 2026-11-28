@@ -20,7 +20,7 @@ One Lambda container image (CDK, AWS Lambda Web Adapter, published index baked i
 - AWS (`us-east-2`, tagged `project_name`): CDK (`aws-cdk-lib`); Lambda container image + AWS Lambda Web Adapter; CloudFront; SSM Parameter Store; EventBridge; AWS Budgets; Powertools for AWS Lambda (TypeScript); Docker for the image build only.
 - Kit: team-kit runtime `@soofi-xyz-team-kit/oracle-runtime` (read-only git submodule).
 
-**Spec:** [`../README.md`](../README.md) · Architecture: [`2026-11-25-roofing-oracle-architecture-and-roadmap.md`](./2026-11-25-roofing-oracle-architecture-and-roadmap.md) (decisions, §0 grading, §0.1 kit deviations)
+**Spec:** [`../README.md`](../README.md) · Architecture: [`roofing-oracle-architecture-and-roadmap.md`](./roofing-oracle-architecture-and-roadmap.md) (decisions, §0 grading, §0.1 kit deviations)
 
 **Repo:** `~/git/oracle-property-intelligence-platform-pipeline-broward-fl/` — `origin` = `github.com/shengda/oracle-property-intelligence-platform-pipeline-broward-fl`, `upstream` = the designated assignment repo (confirm in Task 0, Open Q8). The PR goes from the fork to the designated repo. All paths below are relative to this folder. Test command: `npx vitest run <file>` (integration tests needing `elephant-cli`/`ipfs` on PATH are skipped otherwise).
 
@@ -216,7 +216,7 @@ test("cli wrapper parses hash summary", async () => {        // fake binary prin
 });
 test("integration: fixture outputs validate with zero errors and hash to a CountyIndex root", …);
 test("roofing views expose the contract columns over fixture tables", async () => {
-  await createRoofingViews(db, { asOf: "2026-11-25" });
+  await createRoofingViews(db, { asOf: FIXTURE_AS_OF });
   expect(await columns(db, "v_property")).toEqual(expect.arrayContaining(["parcel_identifier", "property_cid", "lat", "lon", "roof_age_years", "owner_location_class", "occupancy_class"]));
 });
 test("contract export imports without loading DuckDB", …);
@@ -346,9 +346,9 @@ expect(normalizePermitStatus("Issued")).toBe("open");
 expect(normalizePermitStatus("Finaled")).toBe("completed");
 expect(normalizePermitStatus("Inspections in progress")).toBe("open");
 expect(normalizePermitStatus("Gibberish-Status")).toBe("needs_review");
-expect(computeOpenDays({ status: "open", issuedDate: "2016-03-01" }, "2026-11-25")).toBe(3921);
-expect(computeOpenDays({ status: "open", issuedDate: null }, "2026-11-25")).toBeNull();   // Review Focus 2
-expect(computeOpenDays({ status: "completed", issuedDate: "2016-03-01" }, "2026-11-25")).toBeNull();
+expect(computeOpenDays({ status: "open", issuedDate: "2016-03-01" }, FIXTURE_AS_OF)).toBe(3921);
+expect(computeOpenDays({ status: "open", issuedDate: null }, FIXTURE_AS_OF)).toBeNull();   // Review Focus 2
+expect(computeOpenDays({ status: "completed", issuedDate: "2016-03-01" }, FIXTURE_AS_OF)).toBeNull();
 test("blocked jurisdiction is reported, never fetched", …);
 test("permit links to its property by folio; unmatched permits counted, not published", …);
 test("same permit in predecessor and current system becomes one property_improvement", …);
@@ -374,7 +374,7 @@ test("Accela contractor lookup touches only open roofing permits without a contr
 
 - [ ] **Step 1: Write failing tests**
 ```ts
-test("completed primary replacement sets roof_date from the final date", …);   // finaled 2009-05-10 → roof_age_years 17 as of 2026-11-25
+test("completed primary replacement sets roof_date from the final date", …);   // finaled 2009-05-10 → roof_age_years 17 as of FIXTURE_AS_OF
 test("repair/coating never resets roof age", …);                               // repair 2020 on 1990 house → 36 from built year
 test("built-year default writes a year-precision roof_date, never Jan 1", …);  // kit rule
 test("no evidence → roof fields absent", …);

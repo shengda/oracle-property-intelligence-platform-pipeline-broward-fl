@@ -1,10 +1,9 @@
 # Roofing Lead Platform — Architecture & Execution Roadmap
 
-**Date:** 2026-11-25 (revised 2026-11-26: single Elephant publication format; grading requirements.
-Revised 2026-11-26 after plan review: repo layout and PR gate, AWS CDK hosting, Vercel AI SDK,
-documented kit deviations, Atlas requested early, published query index and samples, owner &
-occupancy (tenant) view, permit sourcing, scope cuts. Revised again 2026-11-26: five milestones —
-ingest, inspect, upload, query, deploy.)
+**Revisions:** single Elephant publication format; grading requirements; after plan review: repo
+layout and PR gate, AWS CDK hosting, Vercel AI SDK, documented kit deviations, Atlas requested
+early, published query index and samples, owner & occupancy (tenant) view, permit sourcing, scope
+cuts; five milestones — ingest, inspect, upload, query, deploy.
 **Specs (the two assigned user stories):**
 - Oracle: [`../README.md`](../README.md)
 - CRM: [`../../roofing-crm/README.md`](../../roofing-crm/README.md)
@@ -17,8 +16,8 @@ Summary and consequences in §0. **Prerequisite:** Slowking drives the hosted UR
 server to Claude Code before any self-check.
 
 **Implementation plans:**
-- Oracle: [`2026-11-25-oracle-broward-pipeline-plan.md`](./2026-11-25-oracle-broward-pipeline-plan.md) (this repo)
-- CRM: [`../../roofing-crm/docs/2026-11-25-roofing-crm-plan.md`](../../roofing-crm/docs/2026-11-25-roofing-crm-plan.md) (CRM repo)
+- Oracle: [`oracle-broward-pipeline-plan.md`](./oracle-broward-pipeline-plan.md) (this repo)
+- CRM: [`../../roofing-crm/docs/roofing-crm-plan.md`](../../roofing-crm/docs/roofing-crm-plan.md) (CRM repo)
 
 This document lives in the Oracle repo because the Oracle owns the data contract
 the CRM consumes. Relative links assume the sibling-clone layout in Decision 1.
