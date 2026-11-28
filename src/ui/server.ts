@@ -9,6 +9,7 @@ import { createReadStream, existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import fastifyStatic from "@fastify/static";
+import { createRateLimiter } from "../mcp/rate-limit.ts";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { z } from "zod";
 import * as C from "../contract/index.ts";
@@ -372,6 +373,7 @@ export async function startUiServer(
       radiusMiles: opt(q.radiusMiles, qNum) ?? C.DEFAULTS.radiusMiles,
       minRoofAgeYears: opt(q.minRoofAgeYears, qInt),
       limit: opt(q.limit, qInt),
+      order: q.order === "nearest" ? "nearest" : undefined,
     });
     const [rows, total, uncovered] = await Promise.all([
       Q.findAgedRoofs(db, input),
@@ -455,7 +457,10 @@ export async function startUiServer(
     return send(reply, z.object({ rows: z.array(C.SearchHit) }), { rows });
   });
 
+  const sqlLimiter = createRateLimiter({ limit: 30 });
   app.post<{ Body: { sql?: string; maxRows?: number } }>("/api/sql", async (req, reply) => {
+    if (!sqlLimiter.allow(req.ip))
+      return reply.code(429).send({ error: "Too many SQL queries in a minute; please wait a moment." });
     const r = await Q.readOnlySql(
       db,
       String(req.body?.sql ?? ""),

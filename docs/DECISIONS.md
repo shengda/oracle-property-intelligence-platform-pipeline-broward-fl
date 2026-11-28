@@ -267,6 +267,11 @@ regardless and never bypassed.
   file once in the background right after start.
 - **Agent tool output is compacted for the model** (`compactForModel`): no provenance, URLs, ids or
   nulls per row, at most 40 rows, totals kept. Citations and map pins still use the full result.
+- **Public SQL is sandboxed in the engine.** The served index runs with
+  `enable_external_access = false` and `lock_configuration = true`, so no query can read files or
+  the network (a regex guard alone let `SELECT * FROM 'package.json'` through). The guard also
+  rejects quoted table sources, `/api/sql` is rate-limited per IP, and the Lambda has a reserved
+  concurrency of 20.
 - **Measured** (first deploy, 3008 MB): cold start ~10 s init (13 s first request), warm requests
   ~0.3 s, memory ~265 MB, image 1.76 GB.
 

@@ -48,6 +48,25 @@ describe("lead queries (fixture)", () => {
     expect(younger.length).toBeGreaterThan(rows.length);
   });
 
+  test("order=nearest sorts aged roofs by distance; the default sorts oldest first", async () => {
+    const base = { center: FTL, radiusMiles: 10, minRoofAgeYears: 0 };
+    const near = await Q.findAgedRoofs(db, { ...base, order: "nearest" });
+    const d = near.map((r) => r.distance_miles!);
+    expect(d).toEqual([...d].sort((a, b) => a - b));
+    const old = (await Q.findAgedRoofs(db, base)).map((r) => r.roof_age_years!);
+    expect(old).toEqual([...old].sort((a, b) => b - a));
+  });
+
+  test("open permits carry their property's roof age", async () => {
+    const rows = await Q.findOpenRoofPermits(db, { center: FTL, radiusMiles: 10 });
+    const linked = rows.filter((r) => r.parcel_identifier);
+    expect(linked.length).toBeGreaterThan(0);
+    for (const r of linked) {
+      const p = await Q.getProperty(db, r.parcel_identifier!);
+      expect(r.roof_age_years ?? null).toBe(p?.property.roof_age_years ?? null);
+    }
+  });
+
   test("open permits sorted by open_days desc with contractor and BBB fields; needs_review excluded", async () => {
     const rows = await Q.findOpenRoofPermits(db, { center: FTL, radiusMiles: 10 });
     expect(rows.length).toBeGreaterThan(0);

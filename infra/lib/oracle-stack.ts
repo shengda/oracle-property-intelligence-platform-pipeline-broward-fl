@@ -64,6 +64,8 @@ export class OracleStack extends Stack {
       architecture: lambda.Architecture.X86_64,
       memorySize: props.memoryMb,
       timeout: Duration.seconds(60),
+      // Caps cost and DuckDB load under a burst; far above what a demo or grader needs.
+      reservedConcurrentExecutions: 20,
       logGroup,
       tracing: lambda.Tracing.ACTIVE,
       environment: {

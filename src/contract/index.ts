@@ -64,6 +64,11 @@ export const AgedRoofsQuery = z.object({
   radiusMiles: z.number().positive().max(50),
   minRoofAgeYears: z.number().int().min(0).default(DEFAULTS.roofAgeYears),
   limit: z.number().int().positive().max(5000).default(DEFAULTS.limit),
+  /**
+   * `oldest` (default): oldest roofs first. `nearest`: closest to the center first, so a capped
+   * list still covers the area and a lower threshold brings in younger roofs (CRM map layer).
+   */
+  order: z.enum(["oldest", "nearest"]).default("oldest"),
 });
 
 export const OpenRoofPermitsQuery = z.object({
@@ -191,7 +196,11 @@ export const PermitCoverage = z.object({
 });
 
 export const PropertyLead = PropertyRow.merge(RowMeta);
-export const PermitLead = RoofPermitRow.merge(RowMeta);
+export const PermitLead = RoofPermitRow.merge(RowMeta).extend({
+  /** The permit's property roof age (v_property), so a permit-only lead still shows it. */
+  roof_age_years: z.number().nullable().optional(),
+  roof_age_basis: RoofAgeBasis.nullable().optional(),
+});
 
 // ── HTTP API v1 / MCP tool DTOs ──────────────────────────────────────────────────────────────
 

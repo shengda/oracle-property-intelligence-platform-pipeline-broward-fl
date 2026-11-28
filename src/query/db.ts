@@ -48,6 +48,10 @@ export async function openIndex(
   if (!existsSync(indexPath)) throw new Error(`index not found: ${indexPath}`);
   const db: WorkDb = await openWorkDb(indexPath, { readOnly: true });
   await db.run("load fts; load vss;");
+  // The served index needs nothing outside itself: no files, no network. Locking the setting
+  // closes replacement scans (`FROM 'package.json'`) and file functions for every query path,
+  // whatever the SQL guard misses.
+  await db.run("set enable_external_access = false; set lock_configuration = true;");
   const meta = (await db.one<IndexMeta>("select * from index_meta")) ?? {
     views_version: "unknown",
     run_id: "unknown",

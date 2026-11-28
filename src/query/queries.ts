@@ -100,7 +100,8 @@ export async function findAgedRoofs(db: SnapshotDb, input: unknown): Promise<Pro
   const rows = await db.all(
     `select ${PROPERTY_COLS}, ${distanceSql(q.center, "p")} as distance_miles from v_property p
      where ${radiusSql(q.center, q.radiusMiles, "p")} and p.roof_age_years >= ${num(q.minRoofAgeYears)}
-     order by p.roof_age_years desc, distance_miles, p.parcel_identifier limit ${lim(q.limit)}`,
+     order by ${q.order === "nearest" ? "distance_miles, p.roof_age_years desc" : "p.roof_age_years desc, distance_miles"},
+       p.parcel_identifier limit ${lim(q.limit)}`,
   );
   return rows.map((r) => propertyLead(db, r));
 }
@@ -131,7 +132,9 @@ export async function findOpenRoofPermits(db: SnapshotDb, input: unknown): Promi
   const q = OpenRoofPermitsQuery.parse(input);
   const minDays = Math.round(q.minOpenYears * 365.25);
   const rows = await db.all(
-    `select ${PERMIT_COLS}, ${distanceSql(q.center, "r")} as distance_miles from v_roof_permit r
+    `select ${PERMIT_COLS}, ${distanceSql(q.center, "r")} as distance_miles,
+       pr.roof_age_years, pr.roof_age_basis
+     from v_roof_permit r left join v_property pr on pr.parcel_identifier = r.parcel_identifier
      where r.status = 'open' and r.open_days is not null and r.open_days >= ${minDays}
        and ${radiusSql(q.center, q.radiusMiles, "r")}
      order by r.open_days desc, r.permit_key limit ${lim(q.limit)}`,

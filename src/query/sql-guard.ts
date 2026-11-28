@@ -30,6 +30,9 @@ export function assertReadOnlySql(sql: string): string {
   if (bad) throw new Error(`statement keyword ${bad[1].toUpperCase()} is not allowed`);
   const fn = FILE_FUNCS.exec(bare);
   if (fn) throw new Error(`function ${fn[1]} is not allowed`);
+  // A quoted string or identifier as a table source is a file path (DuckDB replacement scan).
+  if (/\b(FROM|JOIN)\s+['"]/i.test(trimmed) || /,\s*['"][^'"]*\.(csv|tsv|json|parquet|txt)\b/i.test(trimmed))
+    throw new Error("reading files is not allowed; query the views and tables by name");
   return trimmed;
 }
 
