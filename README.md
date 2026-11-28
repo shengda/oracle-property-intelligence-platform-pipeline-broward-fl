@@ -1,5 +1,8 @@
 # Oracle Property Intelligence Platform Pipeline - Broward County, FL
 
+> **Reviewers:** start at [Implementation (this repository)](#implementation-this-repository): demo
+> video, hosted runtime, how to run it and verify the CIDs.
+>
 > **Hosted:** https://jbahdp5wn5czd3bj2trxjjz6ha0tfyzg.lambda-url.us-east-2.on.aws/ (public, read-only) ·
 > MCP: `…/mcp` · health: `…/api/health` · deployment: [`deploy/README.md`](deploy/README.md) ·
 > published runs (manifest CIDs, run history, verification): [`runs/`](runs/) and
@@ -125,3 +128,127 @@ The pipeline must demonstrate that data is ingested on an ongoing basis (not a o
 - [Roofing CRM & Lead Identification UI](https://github.com/prismteam-ai/roofing-crm)
 - [Soofi XYZ Team Kit](https://github.com/soofi-xyz/soofi-xyz-team-kit)
 - [Elephant Oracle Skills](https://github.com/elephant-xyz/skills)
+
+## Implementation (this repository)
+
+### Review it in five minutes
+
+1. **Watch the demo video:**
+   [oracle_demo.mov](https://drive.google.com/file/d/18Lre0lRzqjFXB2anyambVhYeIAFaxr2L/view?usp=drive_link).
+2. **Open the hosted Explorer:** https://jbahdp5wn5czd3bj2trxjjz6ha0tfyzg.lambda-url.us-east-2.on.aws/
+   - It is public and read-only, with no sign-in. It serves published run 2.
+   - **Runs**, **Sources** and **Quality** show the run summary, the sources and the QA report.
+   - **Manifest** → **Verify now** checks every CID on two public gateways.
+   - **WASM proof** → **Run in browser** runs the query in your browser, reading the Parquet from IPFS.
+   - **Explorer** at Fort Lauderdale, radius 5, shows aged roofs and long-open permits.
+   - **Agent** answers questions in plain language. **MCP** is a live JSON-RPC console.
+3. **Follow the demo script:** [`docs/DEMO.md`](docs/DEMO.md) maps every README demo step to a
+   page, with what to point at. [`docs/DEMO-VIDEO.md`](docs/DEMO-VIDEO.md) is the script the
+   video follows.
+
+### Published runs
+
+| Run | Manifest CID | In this repo |
+|---|---|---|
+| 1, full | `bafkreigdrq3tmzv6wk4ymglnlncrxflgsdkcw6g4z6hmzbbtdtp4lxvdqi` | `runs/20261127T132618Z-full/` |
+| 2, incremental (chained to run 1) | `bafkreiaw4jf6xzwtgpcfadnu7vbwpwpshbv7qz2hflapksf5m4rzl4dsby` | `runs/20261127T223244Z-incremental/` |
+
+- **What each run folder holds:** `publish/` (manifest, run history, gateway verification) and
+  `meta/` (QA, coverage, deltas).
+- **Fetch by CID yourself:**
+
+  ```bash
+  CID=bafkreiaw4jf6xzwtgpcfadnu7vbwpwpshbv7qz2hflapksf5m4rzl4dsby
+  curl -s https://ipfs.filebase.io/ipfs/$CID | shasum -a 256
+  curl -s https://gateway.pinata.cloud/ipfs/$CID | shasum -a 256
+  ```
+
+  Both hashes match each other and the committed `publish/manifest.json`.
+- **Atlas:** the permit group is registered for review in
+  [elephant-xyz/atlas#211](https://github.com/elephant-xyz/atlas/pull/211).
+
+### Hosted endpoints
+
+| What | Where |
+|---|---|
+| Explorer UI | `/` |
+| Health (run, manifest, agent) | `GET /api/health` |
+| Lead queries (aged roofs, open permits, occupancy, out-of-area and long-held owners) | `GET /api/query/<name>` |
+| Detail by id | `GET /api/property/<folio>`, `/api/permit/<key>`, `/api/contractor/<id>` |
+| Read-only SQL (sandboxed, rate-limited) | `POST /api/sql` `{"sql": "select …"}` |
+| Agent | `POST /api/agent` `{"message": "…"}` |
+| MCP (Streamable HTTP, 13 tools; see [`docs/MCP.md`](docs/MCP.md)) | `POST /mcp` |
+
+Hosting runs on AWS: one container Lambda, deployed with CDK, which scales to zero. The data is
+read from the published run. The setup, measured costs and redeploy steps are in
+[`deploy/README.md`](deploy/README.md).
+
+### Run it locally
+
+You need Node 22.18 or later.
+
+```bash
+git clone --recurse-submodules https://github.com/shengda/oracle-property-intelligence-platform-pipeline-broward-fl.git
+cd oracle-property-intelligence-platform-pipeline-broward-fl
+npm ci
+
+# A published run, downloaded by CID and checked against its manifest. It is a large download.
+./bin/oracle.mjs serve --manifest bafkreiaw4jf6xzwtgpcfadnu7vbwpwpshbv7qz2hflapksf5m4rzl4dsby
+
+# Or the tiny synthetic fixture: no downloads, ready in seconds.
+./bin/oracle.mjs serve --fixture
+```
+
+Then open http://127.0.0.1:4317/.
+
+- **The agent tab** needs `ANTHROPIC_API_KEY` in `.env` (see `.env.example`).
+- **Every other tab** works without a key.
+- **Check a run's CIDs** on two public gateways:
+  `./bin/oracle.mjs verify --manifest <cid> --quick`.
+
+### Run the pipeline
+
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md) has the full guide. In short:
+
+```bash
+bash scripts/install-elephant-cli.sh   # pinned Elephant CLI 2 build
+./bin/oracle.mjs readiness             # toolchain, Lexicon manifest, kit submodule
+./bin/oracle.mjs run --no-publish      # ingest → build (Lexicon groups) → index + QA, local only
+./bin/oracle.mjs run --mode incremental  # … → publish → verify → run history (needs .env pinning keys)
+```
+
+- **Disk:** a county-wide build needs about 20 GB free.
+- **Source list and limits:** what each source is and what it can't provide are in
+  [`docs/SOURCES.md`](docs/SOURCES.md).
+- **Mapping:** how source fields map to the Lexicon is in
+  [`docs/LEXICON-MAP.md`](docs/LEXICON-MAP.md).
+
+### Checks
+
+```bash
+npm run typecheck && npm run lint && npm run format:check && npm test
+```
+
+CI runs the same checks on every push. A scheduled uptime check calls the hosted health endpoint.
+
+### Design and decisions
+
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) explains each choice, including where this departs
+  from the team kit and why.
+- [`docs/DATA-QA.md`](docs/DATA-QA.md) has the data-quality findings and sign-off.
+- [`docs/roofing-oracle-architecture-and-roadmap.md`](docs/roofing-oracle-architecture-and-roadmap.md)
+  covers the architecture.
+
+### Known limits
+
+These are also shown in the UI and in the agent's answers.
+
+- **Permits cover Fort Lauderdale and Weston only.**
+  - Unincorporated Broward's service returned HTTP 403.
+  - The other cities only offer one-parcel-at-a-time portals, or need a login.
+- **Fort Lauderdale's permit layer stopped updating in January 2021.** "Open" means open as of
+  then.
+- **No BBB ratings.** BBB returned HTTP 403, and we did not bypass it.
+- **Contractor names** are on about 30% of open permits.
+- **Run 2 is a real incremental publish with new CIDs.** Its source data didn't change, so its
+  record deltas are zero.

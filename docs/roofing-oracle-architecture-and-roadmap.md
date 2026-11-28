@@ -6,7 +6,7 @@ early, published query index and samples, owner & occupancy (tenant) view, permi
 cuts; five milestones — ingest, inspect, upload, query, deploy.
 **Specs (the two assigned user stories):**
 - Oracle: [`../README.md`](../README.md)
-- CRM: [`../../roofing-crm/README.md`](../../roofing-crm/README.md)
+- CRM: [`roofing-crm/README.md`](https://github.com/shengda/roofing-crm/blob/main/README.md)
 
 **Grading:** team-kit `slowking` agent (`agents/slowking.md`) with skills
 `evaluate-candidate-intent`, `evaluate-candidate-product` (+ `reference/assignment-evidence-catalogs.md`)
@@ -17,7 +17,7 @@ server to Claude Code before any self-check.
 
 **Implementation plans:**
 - Oracle: [`oracle-broward-pipeline-plan.md`](./oracle-broward-pipeline-plan.md) (this repo)
-- CRM: [`../../roofing-crm/docs/roofing-crm-plan.md`](../../roofing-crm/docs/roofing-crm-plan.md) (CRM repo)
+- CRM: [`roofing-crm/docs/roofing-crm-plan.md`](https://github.com/shengda/roofing-crm/blob/main/docs/roofing-crm-plan.md) (CRM repo)
 
 This document lives in the Oracle repo because the Oracle owns the data contract
 the CRM consumes. Relative links assume the sibling-clone layout in Decision 1.
